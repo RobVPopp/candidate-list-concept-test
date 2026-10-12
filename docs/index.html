@@ -67,12 +67,12 @@
 
   /* Variant A: fit */
   .fitbtn { background: none; border: 0; padding: 4px 0; display: inline-flex; align-items: baseline; gap: 10px; text-align: left; }
-  .fit-num { font-size: 20px; line-height: 26px; font-weight: 700; min-width: 48px; border-bottom: 1px dotted var(--faint); }
-  .band { font-weight: 500; color: var(--muted); }
+  .fit-num { font-size: 16px; line-height: 24px; font-weight: 500; min-width: 40px; border-bottom: 1px dotted var(--faint); }
+  .band { font-weight: 500; color: var(--ink); background: #ececea; border: 1px solid var(--line); border-radius: 20px; padding: 1px 10px; font-size: 13px; }
 
   /* Variant B: band + count */
   .countbtn { background: none; border: 0; padding: 4px 0; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
-  .countbtn .band { color: var(--ink); font-weight: 600; font-size: 14px; }
+  .countbtn .band { font-weight: 600; margin-bottom: 2px; }
   .countbtn .cnt { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
 
   /* Variant C: chips */
@@ -88,7 +88,16 @@
   /* floating tooltip / popover */
   .float { position: fixed; z-index: 80; background: #fff; border: 1px solid var(--ink); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.16); padding: 14px 16px; display: none; font-size: 13px; }
   .float.show { display: block; }
-  #tip { width: 330px; }
+  #tip { width: 400px; background: #0e0e10; color: #e8e8ea; border-color: #0e0e10; border-radius: 12px; padding: 16px 18px; }
+  #tip .intro { color: #c9c9cd; margin: 0 0 12px; font-size: 14px; line-height: 21px; }
+  #tip .dist { grid-template-columns: 150px 1fr 40px; gap: 7px 10px; margin-bottom: 12px; font-size: 14px; color: #a8a8ae; }
+  #tip .dist .lv b { font-family: ui-monospace, Menlo, monospace; font-weight: 400; margin-right: 6px; }
+  #tip .dist .barwrap { height: 8px; background: #2c2c30; border-radius: 4px; }
+  #tip .dist .bar { background: #9a9a9f; border-radius: 4px; }
+  #tip .dist .lv.top, #tip .dist .pct.top { color: #fff; font-weight: 700; }
+  #tip .dist .barwrap.top .bar { background: #fff; }
+  #tip .sum { border-top: 1px solid #2c2c30; padding-top: 10px; color: #c9c9cd; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 21px; }
+  #tip .sum b { color: #fff; }
   #pop { width: 300px; }
   .tip-h { font-weight: 600; margin-bottom: 8px; }
   .dist { display: grid; grid-template-columns: 46px 1fr 38px; gap: 4px 8px; align-items: center; margin-bottom: 10px; }
@@ -322,7 +331,7 @@
 
   function scoreCell(c, i) {
     if (V === 'a') return '<button class="fitbtn" data-i="' + i + '" aria-label="' + c.fit + ' percent, ' + bandA(c.fit) + '. Show how this is calculated"><span class="fit-num">' + c.fit + '%</span><span class="band">' + bandA(c.fit) + '</span></button>';
-    if (V === 'b') return '<button class="countbtn" data-i="' + i + '" aria-haspopup="dialog"><span class="band">' + bandB(c) + '</span><span class="cnt">' + counts(c).met + ' of 5 must-haves met</span></button>';
+    if (V === 'b') return '<button class="countbtn" data-i="' + i + '"><span class="band">' + bandB(c) + '</span><span class="cnt">' + counts(c).met + ' of 5 must-haves met</span></button>';
     return '<div class="chips">' + CRIT.map(function (x) {
       var st = c.ev[x.k][0];
       return '<button class="chip ' + st + '" data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
@@ -377,15 +386,14 @@
     if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
     el.style.left = left + 'px'; el.style.top = top + 'px';
   }
+  var LV = ['Not a fit', 'Weak fit', 'Partial fit', 'Strong fit', 'Excellent fit'];
   function tipHtml(c) {
-    var p = c.dist, sum = 0, parts = [];
-    p.forEach(function (v, l) { sum += l * v; parts.push(l + '×' + v + '%'); });
-    var e = (sum / 100).toFixed(2);
+    var p = c.dist, sum = 0, parts = [], top = 0;
+    p.forEach(function (v, l) { sum += l * v; if (v > 0 && l > 0) parts.push('(' + l + ' × ' + (v / 100).toFixed(2) + ')'); if (v > p[top]) top = l; });
     var rows = '';
-    for (var l = 4; l >= 0; l--) rows += '<span>Level ' + l + '</span><span class="barwrap"><span class="bar" style="display:block;width:' + p[l] + '%"></span></span><span class="pct">' + p[l] + '%</span>';
-    return '<div class="tip-h">How ' + esc(c.n) + ' scores</div><div class="dist">' + rows + '</div>' +
-      '<div class="sum">' + parts.slice().reverse().join(' + ') + '<br>= <b>' + e + '</b> average level ÷ 4 = <b>' + c.fit + '%</b></div>' +
-      '<div class="conf"><span>Confidence</span><b>' + c.conf + '%</b></div>';
+    for (var l = 0; l <= 4; l++) rows += '<span class="lv' + (l === top ? ' top' : '') + '"><b>' + l + '</b>' + LV[l] + '</span><span class="barwrap' + (l === top ? ' top' : '') + '"><span class="bar" style="display:block;width:' + p[l] + '%;min-width:4px"></span></span><span class="pct' + (l === top ? ' top' : '') + '">' + p[l] + '%</span>';
+    return '<p class="intro">Assessed individually against the brief. Each level has a number, 0 to 4; the fit is the average level weighted by the probabilities. Confidence ' + c.conf + '%.</p><div class="dist">' + rows + '</div>' +
+      '<div class="sum">' + parts.join(' + ') + ' = ' + (sum / 100).toFixed(2) + '<br>' + (sum / 100).toFixed(2) + ' ÷ 4 = <b>' + c.fit + '%</b></div>';
   }
   function popHtml(c) {
     var groups = { met: [], not: [], unk: [] };
@@ -406,20 +414,10 @@
     tbody.addEventListener('focusin', function (e) { var b = e.target.closest('.fitbtn'); if (b) { tip.innerHTML = tipHtml(rows[+b.dataset.i]); place(tip, b); } });
     tbody.addEventListener('focusout', function (e) { if (e.target.closest('.fitbtn')) hideTip(); });
   }
-  if (V === 'b') {
-    var openFor = null;
-    document.getElementById('tbody').addEventListener('click', function (e) {
-      var b = e.target.closest('.countbtn'); if (!b) return;
-      e.stopPropagation();
-      if (openFor === b) { hidePop(); openFor = null; return; }
-      pop.innerHTML = popHtml(rows[+b.dataset.i]); place(pop, b); openFor = b;
-    });
-    document.addEventListener('click', function (e) { if (!pop.contains(e.target)) { hidePop(); openFor = null; } });
-  }
   window.addEventListener('scroll', function () { hideTip(); hidePop(); }, true);
 
   // ---- drawer ---------------------------------------------------------
-  var drawer = document.getElementById('drawer'), cur = -1, asked = {}, focusK = null;
+  var drawer = document.getElementById('drawer'), mode = null, cur = -1, asked = {}, focusK = null;
   function bars() { return '<div class="gbar" style="width:96%"></div><div class="gbar" style="width:82%"></div>'; }
   function critBlock(c, x) {
     var e = c.ev[x.k], st = e[0], key = c.n + x.k;
@@ -438,13 +436,22 @@
       '<h2 class="d-name">' + esc(c.n) + '</h2><div class="d-sub">' + esc(c.title) + ' · ' + esc(c.loc) + '</div></div>';
     var body;
     if (V === 'c') body = CRIT.map(function (x) { return critBlock(c, x); }).join('');
+    else if (mode === 'list') {
+      var g = { met: [], not: [], unk: [] };
+      CRIT.forEach(function (x) { g[c.ev[x.k][0]].push(x.full); });
+      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + bandB(c) + ' · ' + counts(c).met + ' of 5 must-haves met</div></div>';
+      [['met', 'Met'], ['not', 'Not met'], ['unk', 'Unknown']].forEach(function (t) {
+        if (!g[t[0]].length) return;
+        body += '<div class="pop-sec"><h4>' + t[1] + '</h4>' + g[t[0]].map(function (x) { return '<div class="pop-row" style="padding:7px 0;border-bottom:1px solid var(--line)">' + ic(t[0], 16) + '<span>' + esc(x) + '</span></div>'; }).join('') + '</div>';
+      });
+    }
     else body = '<dl style="margin:0"><div class="kv"><dt>Current job title</dt><dd>' + esc(c.title) + '</dd></div><div class="kv"><dt>Location</dt><dd>' + esc(c.loc) + '</dd></div><div class="kv"><dt>Years of experience</dt><dd>' + c.yrs + '</dd></div><div class="kv"><dt>Last updated</dt><dd>' + esc(c.upd) + '</dd></div></dl>';
     drawer.innerHTML = head + '<div class="d-body" id="dbody">' + body + '</div><div class="d-foot"><a href="#" class="full" id="fullp">View full profile</a><span class="soon" id="soon" hidden>Not available in this prototype</span></div>';
     var f = drawer.querySelector('.crit.focus');
     if (f) f.scrollIntoView({ block: 'nearest' });
   }
-  function openDrawer(i, k) {
-    cur = i; focusK = k || null; hideTip(); hidePop();
+  function openDrawer(i, k, m) {
+    cur = i; focusK = k || null; mode = m || null; hideTip(); hidePop();
     renderDrawer(); drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
     document.querySelectorAll('tr.row').forEach(function (r) { r.classList.toggle('sel', +r.dataset.i === i); });
     document.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', +b.dataset.i === i && b.dataset.k === focusK); });
@@ -455,15 +462,16 @@
     document.querySelectorAll('.chip.on').forEach(function (b) { b.classList.remove('on'); });
   }
   document.getElementById('tbody').addEventListener('click', function (e) {
-    var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip');
-    if (ch) openDrawer(+ch.dataset.i, ch.dataset.k);
+    var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip'), cb = e.target.closest('.countbtn');
+    if (cb) openDrawer(+cb.dataset.i, null, 'list');
+    else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k);
     else if (n) openDrawer(+n.dataset.i, null);
   });
   drawer.addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest('#dclose')) closeDrawer();
-    else if (t.closest('#prev') && cur > 0) openDrawer(cur - 1, null);
-    else if (t.closest('#next') && cur < rows.length - 1) openDrawer(cur + 1, null);
+    else if (t.closest('#prev') && cur > 0) openDrawer(cur - 1, null, mode);
+    else if (t.closest('#next') && cur < rows.length - 1) openDrawer(cur + 1, null, mode);
     else if (t.closest('#fullp')) { e.preventDefault(); document.getElementById('soon').hidden = false; }
     else if (t.dataset.ask) { asked[t.dataset.ask] = true; var top = document.getElementById('dbody').scrollTop; renderDrawer(); document.getElementById('dbody').scrollTop = top; }
   });
