@@ -25,3 +25,7 @@ An address with no or an unrecognised `v` shows variant A.
 - Instrument Sans loads from Google Fonts; the page falls back to the system font offline.
 
 Hosted from `docs/` via GitHub Pages.
+
+## Exploration page
+
+`explore.html` stress-tests the three displays at 5, 8 and 10 requirements and sketches configurable requirements (on/off, rename, Must/Nice). Not linked from the test pages.

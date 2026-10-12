@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Requirements at scale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#28272c; --muted:#6b6b70; --faint:#939395; --page:#f6f5f3; --surface:#fff; --header:#dbd7d1; --line:#dbd7d1; --accent:#2f5fd0; --accent-bg:#e6edfb; --bar:#e4e2de; --warn:#fef9c3; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Instrument Sans',system-ui,sans-serif; background:var(--page); color:var(--ink); font-size:14px; line-height:20px; min-width:1100px; }
+  button, select, input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  a { color:var(--accent); }
+  .page { max-width:1320px; margin:0 auto; padding:28px 40px 70px; }
+  h1 { font-size:24px; line-height:32px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:30px 0 10px; }
+  .lede { color:var(--muted); margin:0 0 18px; max-width:820px; }
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .card h3 { margin:0 0 6px; font-size:15px; }
+  .card p { margin:6px 0; }
+  .tag { display:inline-block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .fix { border-top:1px solid var(--line); margin-top:8px; padding-top:8px; }
+  .live { background:var(--warn); border:1px solid #924d00; border-radius:8px; padding:10px 14px; margin:14px 0 0; }
+  .lab { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:8px; }
+  .panel-h { padding:12px 14px; border-bottom:1px solid var(--line); font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+  .panel-b { padding:12px 14px; }
+  .presets { display:flex; gap:6px; margin-bottom:10px; }
+  .seg { border:1.5px solid var(--ink); background:#fff; border-radius:6px; padding:5px 12px; font-weight:500; }
+  .seg.on { background:var(--ink); color:#fff; }
+  .req { display:grid; grid-template-columns:20px 1fr 92px; gap:8px; align-items:center; padding:6px 0; border-top:1px solid var(--line); }
+  .req:first-of-type { border-top:0; }
+  .req.off { opacity:.5; }
+  .req input[type=text] { border:1px solid var(--line); border-radius:4px; padding:4px 6px; width:100%; background:#fff; }
+  .req select { border:1px solid var(--line); border-radius:4px; padding:4px 4px; background:#fff; }
+  .cb { width:18px; height:18px; accent-color:var(--accent); margin:0; }
+  .opt { display:flex; gap:8px; align-items:flex-start; padding:7px 0; border-top:1px solid var(--line); }
+  .opt small { color:var(--muted); display:block; }
+  .meta { color:var(--muted); font-size:13px; margin-top:8px; }
+  .tabs { display:flex; gap:6px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center; }
+  .tabs .grow { flex:1; text-align:right; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; background:#fff; }
+  th { background:var(--header); text-align:left; font-weight:600; padding:10px 12px; font-size:13px; }
+  td { padding:9px 12px; border-top:1px solid var(--line); vertical-align:middle; }
+  tr.flag td { background:#fbf7e6; }
+  .muted { color:var(--muted); }
+  .fitnum { font-size:18px; font-weight:700; margin-right:8px; }
+  .band { font-weight:600; }
+  .sub { color:var(--muted); display:block; font-size:12.5px; }
+  .warnline { color:#924d00; font-weight:600; font-size:12.5px; display:block; }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px 2px 6px; border-radius:20px; font-size:12px; font-weight:500; line-height:17px; white-space:nowrap; }
+  .chip.met { background:var(--ink); color:#fff; border:1.5px solid var(--ink); }
+  .chip.not { background:#fff; border:1.5px solid var(--ink); }
+  .chip.unk { background:#fff; color:var(--muted); border:1.5px dashed var(--faint); }
+  .chip.sum { background:#fff; border:1.5px solid var(--faint); color:var(--muted); }
+  .chip.nice { opacity:.75; }
+  .chip svg { width:12px; height:12px; }
+  .rank { display:inline-block; min-width:22px; color:var(--muted); }
+  .legend { color:var(--muted); font-size:12.5px; padding:8px 14px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>What happens at 10 requirements?</h1>
+  <p class="lede">The test uses five must-haves. Real jobs will have more. This page stress-tests the three displays at up to 10 requirements and shows one way recruiters could configure them. It is separate from the test links, so participants are unaffected.</p>
+
+  <div class="cards">
+    <div class="card">
+      <span class="tag">A · % fit</span>
+      <h3>One failure disappears</h3>
+      <p>The percentage is an average. With 5 requirements a failed must-have costs about 20 points; with 10 it costs about 10, so a candidate who fails a deal-breaker still reads as "Excellent fit". The arithmetic tooltip also grows from five terms to ten, which makes it harder to read, not easier.</p>
+      <p class="fix"><b>If we keep a score:</b> cap it when any must-have fails, and never let the band hide a failed must-have.</p>
+    </div>
+    <div class="card">
+      <span class="tag">B · Band and count</span>
+      <h3>"8 of 10" hides which two</h3>
+      <p>A count treats every requirement as equal. "8 of 10 met" might be two nice-to-haves missing or two deal-breakers failed, and the recruiter cannot tell without clicking. Band thresholds also need a rule that scales (is 8 of 10 the same as 4 of 5?).</p>
+      <p class="fix"><b>If we keep a count:</b> count must-haves only, and add "1 not met" next to it.</p>
+    </div>
+    <div class="card">
+      <span class="tag">C · Criteria and evidence</span>
+      <h3>The row stops being scannable</h3>
+      <p>Ten chips wrap onto two or three lines, row height goes from about 50px to 130px in this demo (13 candidates per screen drops to 5), and the chip labels start to collide ("Accountant role" vs "Audit support"). Recruiters then compare rows by reading, which is what the chips were meant to avoid. The drawer also becomes a ten-block scroll.</p>
+      <p class="fix"><b>If we keep chips:</b> show problems first (not met, unknown) and collapse the met ones into one count; group the drawer by status.</p>
+    </div>
+  </div>
+  <div class="live" id="live" role="status"></div>
+
+  <h2>Try it: configurable requirements</h2>
+  <div class="lab">
+    <div>
+      <div class="panel">
+        <div class="panel-h">Requirements <span class="muted" id="req-count"></span></div>
+        <div class="panel-b">
+          <div class="presets" id="presets"></div>
+          <div id="reqs"></div>
+          <div class="meta">Each requirement can be switched on or off, renamed, and marked <b>Must</b> or <b>Nice</b>. In this sketch the recruiter picks from a set the system can already evidence; free text would need a way to assess it.</div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-h">Display options</div>
+        <div class="panel-b">
+          <label class="opt" style="border:0"><input class="cb" type="checkbox" id="o-cap"><span>A: cap the % at 60% when a must-have fails<small>Off shows the problem as it is today.</small></span></label>
+          <label class="opt"><input class="cb" type="checkbox" id="o-sort-must"><span>B: show "not met" next to the count<small>Counts must-haves only.</small></span></label>
+          <label class="opt"><input class="cb" type="checkbox" id="o-collapse"><span>C: problems first, collapse the met chips<small>Nice-to-haves are drawn lighter.</small></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="tabs" id="tabs">
+        <button class="seg on" data-v="a">A · % fit</button>
+        <button class="seg" data-v="b">B · Band and count</button>
+        <button class="seg" data-v="c">C · Criteria chips</button>
+        <span class="grow" id="rowh"></span>
+      </div>
+      <div class="legend">Same ten fictional candidates. Rows ordered by each variant's own logic. Highlighted rows have at least one failed must-have.</div>
+      <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // states: m = met, n = not met, u = unknown. Order matches POOL.
+  var POOL = [
+    { id: 'role',   short: 'Accountant role', name: 'Experience in an accountant role', imp: 'must' },
+    { id: 'qual',   short: 'Qualified',       name: 'A recognised qualification (ACA, ACCA or CIMA)', imp: 'must' },
+    { id: 'month',  short: 'Month-end',       name: 'Month-end reporting experience', imp: 'must' },
+    { id: 'uk',     short: 'UK-based',        name: 'Based in the UK', imp: 'must' },
+    { id: 'rtw',    short: 'Right to work',   name: 'Right to work in the UK', imp: 'must' },
+    { id: 'audit',  short: 'Audit support',   name: 'Audit support experience', imp: 'must' },
+    { id: 'mgmt',   short: 'Mgmt accounts',   name: 'Management accounts preparation', imp: 'must' },
+    { id: 'sector', short: 'Distribution',    name: 'Distribution or logistics sector', imp: 'nice' },
+    { id: 'erp',    short: 'ERP',             name: 'ERP system experience (SAP, Sage)', imp: 'nice' },
+    { id: 'notice', short: 'Notice period',   name: 'Notice period of 3 months or less', imp: 'nice' }
+  ];
+  var CAND = [
+    ['Priya Nair',    'mmmmu mmmmu'], ['Tomas Weber',  'mmmnu mmmum'], ['Hannah Clarke','mmmmm mmumm'],
+    ['Samuel Okoye',  'mmumm umnmm'], ['Aiko Tanaka',  'mmmmu mummm'], ['Daniel Evans', 'nmmmm nmuum'],
+    ['Meera Shah',    'mmumm munmu'], ['Lucas Martin', 'mmmnu ummnm'], ['Chloe Bennett','mumnm nunum'],
+    ['Rahul Verma',   'nmumm unmmn']
+  ].map(function (c) { var s = c[1].replace(' ', ''); return { n: c[0], s: s.split('') }; });
+
+  var state = { v: 'a', on: [0,1,2,3,4].map(function (i) { return true; }).concat([false,false,false,false,false]),
+    reqs: POOL.map(function (r) { return { short: r.short, name: r.name, imp: r.imp }; }),
+    cap: false, notmet: false, collapse: false };
+
+  function ic(st) {
+    if (st === 'met') return '<svg viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if (st === 'not') return '<svg viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    return '<svg viewBox="0 0 14 14"><path d="M3.5 7h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="1.6 2.2"/></svg>';
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (m) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]; }); }
+  var NAME = { m: 'met', n: 'not', u: 'unk' };
+
+  function active() { var a = []; state.on.forEach(function (o, i) { if (o) a.push(i); }); return a; }
+
+  function score(c) {
+    var act = active(), w = 0, tot = 0, mm = 0, mn = 0, mu = 0, musts = 0, am = 0, an = 0, au = 0;
+    act.forEach(function (i) {
+      var must = state.reqs[i].imp === 'must', wt = must ? 2 : 1, s = c.s[i];
+      tot += wt * 4; w += wt * (s === 'm' ? 4 : s === 'u' ? 2 : 0);
+      if (s === 'm') am++; else if (s === 'n') an++; else au++;
+      if (must) { musts++; if (s === 'm') mm++; else if (s === 'n') mn++; else mu++; }
+    });
+    var fit = tot ? Math.round(w / tot * 100) : 0;
+    var capped = false;
+    if (state.cap && mn > 0 && fit > 60) { fit = 60; capped = true; }
+    return { fit: fit, capped: capped, musts: musts, mm: mm, mn: mn, mu: mu, am: am, an: an, au: au, n: act.length };
+  }
+  function bandA(f) { return f >= 90 ? 'Excellent fit' : f >= 80 ? 'Strong fit' : f >= 70 ? 'Good fit' : 'Partial fit'; }
+  function bandB(k) {
+    if (!k.musts) return 'No must-haves set';
+    if (k.mm === k.musts) return 'Excellent fit';
+    if (k.mn === 0) return 'Strong fit';
+    return (k.mm / k.musts >= 0.8) ? 'Partial fit' : 'Weak fit';
+  }
+
+  function ordered() {
+    var list = CAND.map(function (c) { return { c: c, k: score(c) }; });
+    if (state.v === 'a') list.sort(function (x, y) { return y.k.fit - x.k.fit; });
+    else list.sort(function (x, y) { return (x.k.mn - y.k.mn) || (y.k.mm - x.k.mm) || (x.k.mu - y.k.mu) || (y.k.fit - x.k.fit); });
+    return list;
+  }
+
+  function chipsFor(c) {
+    var act = active(), html = '', met = 0, metNice = 0;
+    var items = act.map(function (i) { return { i: i, s: NAME[c.s[i]] }; });
+    var show = items;
+    if (state.collapse) {
+      var rank = { not: 0, unk: 1, met: 2 };
+      items.sort(function (a, b) { return rank[a.s] - rank[b.s] || (state.reqs[a.i].imp === 'must' ? -1 : 1); });
+      show = items.filter(function (x) { return x.s !== 'met'; });
+      met = items.length - show.length;
+    }
+    show.forEach(function (x) {
+      html += '<span class="chip ' + x.s + (state.reqs[x.i].imp === 'nice' ? ' nice' : '') + '">' + ic(x.s) + esc(state.reqs[x.i].short) + (state.reqs[x.i].imp === 'nice' ? ' <span class="muted">(nice)</span>' : '') + '</span>';
+    });
+    if (state.collapse && met) html += '<span class="chip sum">' + ic('met') + met + ' met</span>';
+    return '<div class="chips">' + html + '</div>';
+  }
+
+  function render() {
+    var list = ordered(), n = active().length;
+    document.getElementById('req-count').textContent = n + ' of 10 in use';
+    var th = state.v === 'a' ? 'Fit' : state.v === 'b' ? 'Must-haves' : 'Requirements';
+    document.getElementById('thead').innerHTML = '<tr><th style="width:36px">#</th><th style="width:140px">Name</th><th>' + th + '</th><th style="width:110px">Location</th></tr>';
+    var LOC = { 'Priya Nair':'Manchester','Tomas Weber':'Berlin','Hannah Clarke':'Leeds','Samuel Okoye':'London','Aiko Tanaka':'Bristol','Daniel Evans':'Cardiff','Meera Shah':'Birmingham','Lucas Martin':'Madrid','Chloe Bennett':'Edinburgh','Rahul Verma':'Glasgow' };
+    document.getElementById('tbody').innerHTML = list.map(function (x, i) {
+      var k = x.k, cell;
+      if (state.v === 'a') cell = '<span class="fitnum">' + k.fit + '%</span><span class="band">' + bandA(k.fit) + '</span>' + (k.mn ? '<span class="warnline">' + k.mn + ' must-have not met' + (k.capped ? ' (score capped)' : ' and still ' + bandA(k.fit)) + '</span>' : '');
+      else if (state.v === 'b') cell = '<span class="band">' + bandB(k) + '</span><span class="sub">' + k.mm + ' of ' + k.musts + ' must-haves met' + (state.notmet && k.mn ? ' · <b>' + k.mn + ' not met</b>' : '') + (state.notmet && k.mu ? ' · ' + k.mu + ' unknown' : '') + '</span>';
+      else cell = chipsFor(x.c);
+      return '<tr class="' + (k.mn ? 'flag' : '') + '"><td><span class="rank">' + (i + 1) + '</span></td><td><b>' + esc(x.c.n) + '</b></td><td>' + cell + '</td><td class="muted">' + LOC[x.c.n] + '</td></tr>';
+    }).join('');
+    var rows = document.querySelectorAll('#tbody tr'), h = 0;
+    rows.forEach(function (r) { h += r.getBoundingClientRect().height; });
+    document.getElementById('rowh').textContent = 'Average row height: ' + Math.round(h / rows.length) + 'px · ' + Math.floor(700 / (h / rows.length)) + ' candidates per 700px';
+    live();
+  }
+
+  // The live callout compares where failed-must-have candidates land under each display.
+  function live() {
+    var saveV = state.v, out = [];
+    state.v = 'a';
+    var la = ordered();
+    state.v = 'b';
+    var lb = ordered();
+    state.v = saveV;
+    la.forEach(function (x, i) {
+      if (x.k.mn) {
+        var j = lb.map(function (y) { return y.c.n; }).indexOf(x.c.n);
+        out.push('<b>' + esc(x.c.n) + '</b> (' + x.k.mn + ' failed must-have' + (x.k.mn > 1 ? 's' : '') + '): #' + (i + 1) + ' in A at ' + x.k.fit + '%, #' + (j + 1) + ' in B');
+      }
+    });
+    document.getElementById('live').innerHTML = '<b>With the ' + active().length + ' requirements below:</b> ' + (out.length ? out.slice(0, 4).join(' · ') : 'no candidate fails a must-have.') + (out.length > 4 ? ' · …' : '');
+  }
+
+  // ---- requirement editor ----------------------------------------------
+  function renderReqs() {
+    document.getElementById('reqs').innerHTML = POOL.map(function (p, i) {
+      var r = state.reqs[i];
+      return '<div class="req' + (state.on[i] ? '' : ' off') + '"><input class="cb" type="checkbox" data-i="' + i + '" aria-label="Use ' + esc(r.name) + '"' + (state.on[i] ? ' checked' : '') + '>' +
+        '<input type="text" data-n="' + i + '" value="' + esc(r.short) + '" aria-label="Short label" title="' + esc(r.name) + '">' +
+        '<select data-m="' + i + '" aria-label="Importance"><option value="must"' + (r.imp === 'must' ? ' selected' : '') + '>Must</option><option value="nice"' + (r.imp === 'nice' ? ' selected' : '') + '>Nice</option></select></div>';
+    }).join('');
+  }
+  var reqs = document.getElementById('reqs');
+  reqs.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset.i !== undefined) { state.on[+t.dataset.i] = t.checked; renderReqs(); }
+    if (t.dataset.m !== undefined) state.reqs[+t.dataset.m].imp = t.value;
+    render();
+  });
+  reqs.addEventListener('input', function (e) { if (e.target.dataset.n !== undefined) { state.reqs[+e.target.dataset.n].short = e.target.value || ' '; render(); } });
+
+  var P = { 5: [0,1,2,3,4], 8: [0,1,2,3,4,5,6,7], 10: [0,1,2,3,4,5,6,7,8,9] };
+  document.getElementById('presets').innerHTML = [5, 8, 10].map(function (n) { return '<button class="seg" data-p="' + n + '">' + n + ' requirements</button>'; }).join('');
+  function markPreset() {
+    var a = active().length;
+    document.querySelectorAll('#presets .seg').forEach(function (b) { b.classList.toggle('on', +b.dataset.p === a); });
+  }
+  document.getElementById('presets').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-p]'); if (!b) return;
+    state.on = POOL.map(function (_, i) { return P[b.dataset.p].indexOf(i) >= 0; });
+    renderReqs(); render(); markPreset();
+  });
+  reqs.addEventListener('change', markPreset);
+
+  document.getElementById('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-v]'); if (!b) return;
+    state.v = b.dataset.v;
+    document.querySelectorAll('#tabs .seg').forEach(function (x) { x.classList.toggle('on', x === b); });
+    render();
+  });
+  document.getElementById('o-cap').addEventListener('change', function (e) { state.cap = e.target.checked; render(); });
+  document.getElementById('o-sort-must').addEventListener('change', function (e) { state.notmet = e.target.checked; render(); });
+  document.getElementById('o-collapse').addEventListener('change', function (e) { state.collapse = e.target.checked; render(); });
+
+  renderReqs(); render(); markPreset();
+})();
+</script>
+</body>
+</html>
