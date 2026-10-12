@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Candidate list</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #28272c;
+    --muted: #6b6b70;
+    --faint: #939395;
+    --page: #f6f5f3;
+    --surface: #ffffff;
+    --header: #dbd7d1;
+    --line: #dbd7d1;
+    --accent: #2f5fd0;
+    --accent-bg: #e6edfb;
+    --bar: #e4e2de;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--page); color: var(--ink); font-size: 14px; line-height: 20px;
+    min-width: 1100px;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--accent); }
+  svg { flex: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { display: flex; align-items: flex-start; min-height: 100vh; }
+  .main { flex: 1; min-width: 0; padding: 28px 40px 60px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .jobline { font-size: 18px; line-height: 26px; font-weight: 600; }
+  .jobline .sep { color: var(--faint); margin: 0 6px; font-weight: 400; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; font-size: 16px; }
+  .actions { display: flex; align-items: center; gap: 14px; }
+  .count-note { color: var(--muted); }
+  .count-note b { color: var(--ink); }
+  .btn { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 600; }
+  .btn:hover { background: #000; }
+  .notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--ink); background: var(--surface); border-radius: 6px; display: none; }
+  .notice.show { display: block; }
+  .notice.warn { border-color: #924d00; background: #fef9c3; }
+  .legend { display: flex; gap: 18px; margin: 0 0 10px; color: var(--muted); font-size: 13px; align-items: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  th { background: var(--header); text-align: left; font-weight: 600; padding: 12px 14px; font-size: 13px; white-space: nowrap; }
+  td { padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: middle; }
+  tr.row.sel td { background: var(--accent-bg); }
+  tr.row.picked td { background: #f1f1ef; }
+  tr.row.sel.picked td { background: var(--accent-bg); }
+  td.c-check, th.c-check { width: 46px; padding-right: 0; }
+  .namebtn { background: none; border: 0; padding: 0; font-weight: 600; text-align: left; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--faint); }
+  .namebtn:hover { text-decoration-color: var(--ink); }
+  .muted { color: var(--muted); }
+
+  .checkbox { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 1.5px solid var(--ink); border-radius: 4px; background: #fff; margin: 0; cursor: pointer; display: block; }
+  .checkbox:checked { background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z'/%3E%3C/svg%3E") center/80% no-repeat; border-color: var(--accent); }
+
+  /* Variant A: fit */
+  .fitbtn { background: none; border: 0; padding: 4px 0; display: inline-flex; align-items: baseline; gap: 10px; text-align: left; }
+  .fit-num { font-size: 20px; line-height: 26px; font-weight: 700; min-width: 48px; border-bottom: 1px dotted var(--faint); }
+  .band { font-weight: 500; color: var(--muted); }
+
+  /* Variant B: band + count */
+  .countbtn { background: none; border: 0; padding: 4px 0; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
+  .countbtn .band { color: var(--ink); font-weight: 600; font-size: 14px; }
+  .countbtn .cnt { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+
+  /* Variant C: chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 20px; font-size: 12.5px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+  .chip.met { background: var(--ink); color: #fff; border: 1.5px solid var(--ink); }
+  .chip.not { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
+  .chip.unk { background: #fff; color: var(--muted); border: 1.5px dashed var(--faint); }
+  .chip:hover { box-shadow: 0 0 0 2px var(--accent-bg); }
+  .chip.on { box-shadow: 0 0 0 2px var(--accent); }
+  .mark { width: 14px; height: 14px; display: inline-block; }
+
+  /* floating tooltip / popover */
+  .float { position: fixed; z-index: 80; background: #fff; border: 1px solid var(--ink); border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.16); padding: 14px 16px; display: none; font-size: 13px; }
+  .float.show { display: block; }
+  #tip { width: 330px; }
+  #pop { width: 300px; }
+  .tip-h { font-weight: 600; margin-bottom: 8px; }
+  .dist { display: grid; grid-template-columns: 46px 1fr 38px; gap: 4px 8px; align-items: center; margin-bottom: 10px; }
+  .dist .barwrap { height: 10px; background: var(--bar); border-radius: 2px; }
+  .dist .bar { height: 100%; background: var(--ink); border-radius: 2px; }
+  .dist .pct { text-align: right; font-variant-numeric: tabular-nums; }
+  .sum { border-top: 1px solid var(--line); padding-top: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sum b { color: var(--ink); }
+  .conf { margin-top: 6px; display: flex; justify-content: space-between; }
+  .pop-sec { margin-top: 10px; }
+  .pop-sec:first-of-type { margin-top: 6px; }
+  .pop-sec h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .pop-row { display: flex; gap: 8px; align-items: center; padding: 2px 0; }
+
+  /* side panels */
+  .jd { width: 0; overflow: hidden; background: var(--surface); border-left: 1px solid var(--line); position: sticky; top: 0; height: 100vh; transition: width .25s ease; flex: none; }
+  .jd.open { width: 360px; overflow: auto; }
+  .jd-in { width: 360px; padding: 28px 26px; }
+  .jd h2 { margin: 0 0 4px; font-size: 18px; line-height: 26px; }
+  .jd p { margin: 10px 0; }
+  .jd h3 { margin: 18px 0 6px; font-size: 14px; }
+  .jd ul { margin: 0; padding-left: 20px; }
+  .jd li { margin: 4px 0; }
+  .iconbtn { background: none; border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; font-size: 18px; line-height: 20px; }
+  .iconbtn:hover:not(:disabled) { border-color: var(--line); background: var(--page); }
+  .iconbtn:disabled { color: var(--bar); cursor: default; }
+
+  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 480px; background: var(--surface); box-shadow: -8px 0 28px rgba(0,0,0,.14); border-left: 1px solid var(--ink); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s ease-in-out; }
+  .drawer.open { transform: translateX(0); }
+  .d-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
+  .d-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .stepper { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+  .d-name { font-size: 20px; line-height: 28px; font-weight: 700; margin: 0; }
+  .d-sub { color: var(--muted); }
+  .d-body { flex: 1; overflow: auto; padding: 8px 22px 22px; }
+  .d-foot { border-top: 1px solid var(--line); padding: 14px 22px; }
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-weight: 500; }
+  .crit { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .crit.focus { background: var(--accent-bg); margin: 0 -22px; padding: 16px 22px; }
+  .crit-h { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .crit-h .state { margin-left: auto; font-weight: 500; color: var(--muted); font-size: 13px; }
+  .src { margin: 10px 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .doc { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: #fcfcfb; }
+  .gbar { height: 8px; border-radius: 4px; background: var(--bar); margin: 6px 0; }
+  .quote { margin: 8px 0; font-size: 13.5px; }
+  mark { background: #ffe58a; color: var(--ink); padding: 0 2px; border-radius: 2px; font-weight: 600; }
+  .none { border: 1.5px dashed var(--faint); border-radius: 6px; padding: 10px 12px; color: var(--muted); background: #fff; }
+  .ask { margin-top: 10px; background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; padding: 7px 14px; font-weight: 600; }
+  .ask:hover:not(:disabled) { background: var(--page); }
+  .ask:disabled { border-color: var(--faint); color: var(--muted); cursor: default; }
+  .full { display: inline-block; font-weight: 600; font-size: 14px; }
+  .soon { color: var(--muted); font-size: 12px; margin-left: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <main class="main">
+    <div class="topbar">
+      <div class="jobline">Accountant, Manchester (hybrid)<span class="sep">·</span><button class="linkbtn" id="jd-toggle" aria-expanded="false" aria-controls="jd">View job description</button></div>
+      <div class="actions">
+        <span class="count-note">Shortlisted: <b id="n-short">0</b> of 3</span>
+        <button class="btn" id="done">Done</button>
+      </div>
+    </div>
+    <div class="notice" id="notice" role="status" aria-live="polite"></div>
+    <div class="legend" id="legend" hidden>
+      <span id="lg-met"></span><span id="lg-not"></span><span id="lg-unk"></span>
+    </div>
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </main>
+  <aside class="jd" id="jd" aria-label="Job description">
+    <div class="jd-in">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <h2>Accountant</h2>
+        <button class="iconbtn" id="jd-close" aria-label="Close job description">✕</button>
+      </div>
+      <div class="muted">Manchester, hybrid (two days a week in the office) · permanent</div>
+      <p>Our client is a mid-sized UK distribution company. As part of a small finance team you will run month-end reporting, prepare management accounts and support the annual audit.</p>
+      <h3>Must have</h3>
+      <ul>
+        <li>Experience in an accountant role</li>
+        <li>A recognised qualification (ACA, ACCA or CIMA)</li>
+        <li>Month-end reporting experience</li>
+        <li>Based in the UK</li>
+        <li>Right to work in the UK</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<div class="float" id="tip" role="tooltip"></div>
+<div class="float" id="pop" role="dialog" aria-label="Must-have breakdown"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Candidate detail"></aside>
+
+<script>
+(function () {
+  var CRIT = [
+    { k: 'role',  short: 'Accountant role', full: 'Experience in an accountant role' },
+    { k: 'qual',  short: 'Qualified',       full: 'A recognised qualification (ACA, ACCA or CIMA)' },
+    { k: 'month', short: 'Month-end',       full: 'Month-end reporting experience' },
+    { k: 'uk',    short: 'UK-based',        full: 'Based in the UK' },
+    { k: 'rtw',   short: 'Right to work',   full: 'Right to work in the UK' }
+  ];
+  var STATE_LABEL = { met: 'Met', not: 'Not met', unk: 'Unknown' };
+
+  // ev: [status, source, text with [[keyword]] highlight]. Unknown has no text.
+  // Fit and confidence are for variant A only; all other fields are shared.
+  var C = [
+    { n: 'Priya Nair', loc: 'Manchester', yrs: 7, title: 'Senior Accountant', upd: '2 weeks ago', fit: 94, conf: 71, ev: {
+      role: ['met', 'CV · Experience', 'Senior [[Accountant]], Northern Freight Ltd, 2019 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2018'],
+      month: ['met', 'CV · Experience', 'Owned [[month-end]] close and reporting for three entities'],
+      uk: ['met', 'Profile · Location', '[[Manchester]], United Kingdom'],
+      rtw: ['unk'] } },
+    { n: 'Tomas Weber', loc: 'Berlin', yrs: 9, title: 'Senior Accountant', upd: '1 month ago', fit: 92, conf: 68, ev: {
+      role: ['met', 'CV · Experience', 'Senior [[Accountant]], Brandt Logistik GmbH, 2017 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2016'],
+      month: ['met', 'CV · Experience', 'Prepared [[month-end]] reporting packs for group finance'],
+      uk: ['not', 'Profile · Location', '[[Berlin]], Germany. No UK address on CV'],
+      rtw: ['unk'] } },
+    { n: 'Hannah Clarke', loc: 'Leeds', yrs: 5, title: 'Financial Accountant', upd: '1 month ago', fit: 91, conf: 88, ev: {
+      role: ['met', 'CV · Experience', '[[Financial Accountant]], Calder Foods, 2020 to present'],
+      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2020'],
+      month: ['met', 'CV · Experience', 'Delivered [[month-end]] reporting within five working days'],
+      uk: ['met', 'Profile · Location', '[[Leeds]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
+    { n: 'Samuel Okoye', loc: 'London', yrs: 6, title: 'Management Accountant', upd: '3 weeks ago', fit: 89, conf: 76, ev: {
+      role: ['met', 'CV · Experience', '[[Management Accountant]], Harlow Retail, 2019 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACA]] qualified, 2019'],
+      month: ['unk'],
+      uk: ['met', 'Profile · Location', '[[London]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', 'Right to work: [[Settled status]]'] } },
+    { n: 'Aiko Tanaka', loc: 'Bristol', yrs: 4, title: 'Accountant', upd: '2 months ago', fit: 86, conf: 72, ev: {
+      role: ['met', 'CV · Experience', '[[Accountant]], Severn Packaging, 2021 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2021'],
+      month: ['met', 'CV · Experience', 'Responsible for [[month-end]] journals and reconciliations'],
+      uk: ['met', 'Profile · Location', '[[Bristol]], United Kingdom'],
+      rtw: ['unk'] } },
+    { n: 'Daniel Evans', loc: 'Cardiff', yrs: 8, title: 'Bookkeeper', upd: '3 years ago', fit: 83, conf: 61, ev: {
+      role: ['not', 'CV · Experience', '[[Bookkeeper]], Evans & Co, 2016 to 2023. No accountant role listed'],
+      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2017'],
+      month: ['met', 'CV · Experience', 'Prepared [[month-end]] trial balance for small clients'],
+      uk: ['met', 'Profile · Location', '[[Cardiff]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
+    { n: 'Meera Shah', loc: 'Birmingham', yrs: 3, title: 'Accountant', upd: '1 month ago', fit: 80, conf: 74, ev: {
+      role: ['met', 'CV · Experience', '[[Accountant]], Midlands Print, 2022 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACA]] qualified, 2022'],
+      month: ['unk'],
+      uk: ['met', 'Profile · Location', '[[Birmingham]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', 'Right to work: [[Indefinite leave to remain]]'] } },
+    { n: 'Lucas Martin', loc: 'Madrid', yrs: 6, title: 'Accountant', upd: '2 months ago', fit: 78, conf: 66, ev: {
+      role: ['met', 'CV · Experience', '[[Accountant]], Iberia Textiles SL, 2019 to present'],
+      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2018'],
+      month: ['met', 'CV · Experience', 'Ran [[month-end]] close for two subsidiaries'],
+      uk: ['not', 'Profile · Location', '[[Madrid]], Spain. No UK address on CV'],
+      rtw: ['unk'] } },
+    { n: 'Chloe Bennett', loc: 'Edinburgh', yrs: 2, title: 'Junior Accountant', upd: '1 month ago', fit: 70, conf: 55, ev: {
+      role: ['met', 'CV · Experience', '[[Junior Accountant]], Forth Estates, 2023 to present'],
+      qual: ['unk'],
+      month: ['not', 'CV · Experience', 'Duties listed are [[accounts payable]] and expenses. No month-end reporting'],
+      uk: ['met', 'Profile · Location', '[[Edinburgh]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
+    { n: 'Rahul Verma', loc: 'Glasgow', yrs: 10, title: 'Payroll Officer', upd: '4 months ago', fit: 64, conf: 52, ev: {
+      role: ['not', 'CV · Experience', '[[Payroll Officer]], Clyde Services, 2015 to present. No accountant role listed'],
+      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2014'],
+      month: ['unk'],
+      uk: ['met', 'Profile · Location', '[[Glasgow]], United Kingdom'],
+      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } }
+  ];
+  var ORDER_BC = ['Hannah Clarke', 'Priya Nair', 'Samuel Okoye', 'Aiko Tanaka', 'Meera Shah', 'Daniel Evans', 'Tomas Weber', 'Lucas Martin', 'Chloe Bennett', 'Rahul Verma'];
+
+  var q = new URLSearchParams(location.search).get('v');
+  var V = (q || 'a').toLowerCase();
+  if (['a', 'b', 'c'].indexOf(V) < 0) V = 'a';
+
+  var rows = V === 'a' ? C.slice() : ORDER_BC.map(function (n) { return C.filter(function (c) { return c.n === n; })[0]; });
+
+  // ---- derived values -------------------------------------------------
+  function counts(c) {
+    var r = { met: 0, not: 0, unk: 0 };
+    CRIT.forEach(function (x) { r[c.ev[x.k][0]]++; });
+    return r;
+  }
+  function bandB(c) {
+    var k = counts(c);
+    if (k.met === 5) return 'Excellent fit';
+    if (k.met === 4 && k.not === 0) return 'Strong fit';
+    if (k.met === 4) return 'Partial fit';
+    return 'Weak fit';
+  }
+  function bandA(f) { return f >= 90 ? 'Excellent fit' : f >= 80 ? 'Strong fit' : f >= 70 ? 'Good fit' : 'Partial fit'; }
+
+  // Variant A: 0-4 level distribution (whole percents) whose
+  // probability-weighted average level / 4 gives the displayed fit.
+  function dist(fit) {
+    var s = fit * 4, k = Math.floor(s / 100), r = s - 100 * k;
+    var p = [0, 0, 0, 0, 0];
+    p[k] = 100 - r; p[k + 1] = r;
+    var m = Math.min(Math.floor(p[k] / 2), 6);   // mean-preserving spread
+    p[k] -= 2 * m; p[k - 1] += m; p[k + 1] += m;
+    return p;
+  }
+  C.forEach(function (c) { c.dist = dist(c.fit); });
+
+  // ---- icons ----------------------------------------------------------
+  function ic(state, size) {
+    var s = size || 14;
+    var a = 'class="mark" width="' + s + '" height="' + s + '" viewBox="0 0 14 14" aria-hidden="true"';
+    if (state === 'met') return '<svg ' + a + '><path d="M2.5 7.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if (state === 'not') return '<svg ' + a + '><path d="M3 3l8 8M11 3l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    return '<svg ' + a + '><path d="M3.5 7h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="1.6 2.2"/></svg>';
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]; }); }
+  function hl(t) { return esc(t).replace(/\[\[(.+?)\]\]/g, '<mark>$1</mark>'); }
+  function idx(n) { return rows.map(function (c) { return c.n; }).indexOf(n); }
+
+  // ---- table ----------------------------------------------------------
+  var scoreHead = V === 'a' ? 'Fit' : V === 'b' ? 'Must-haves' : 'Must-have criteria';
+  document.getElementById('thead').innerHTML = '<tr><th class="c-check"><span class="sr" style="position:absolute;left:-9999px">Shortlist</span></th><th>Name</th><th>' + scoreHead + '</th><th>Location</th><th>Years of experience</th><th>Current job title</th><th>Last updated</th></tr>';
+  if (V === 'c') {
+    document.getElementById('legend').hidden = false;
+    document.getElementById('lg-met').innerHTML = '<span class="chip met">' + ic('met', 12) + 'Met</span>';
+    document.getElementById('lg-not').innerHTML = '<span class="chip not">' + ic('not', 12) + 'Not met</span>';
+    document.getElementById('lg-unk').innerHTML = '<span class="chip unk">' + ic('unk', 12) + 'Unknown</span>';
+  }
+
+  function scoreCell(c, i) {
+    if (V === 'a') return '<button class="fitbtn" data-i="' + i + '" aria-label="' + c.fit + ' percent, ' + bandA(c.fit) + '. Show how this is calculated"><span class="fit-num">' + c.fit + '%</span><span class="band">' + bandA(c.fit) + '</span></button>';
+    if (V === 'b') return '<button class="countbtn" data-i="' + i + '" aria-haspopup="dialog"><span class="band">' + bandB(c) + '</span><span class="cnt">' + counts(c).met + ' of 5 must-haves met</span></button>';
+    return '<div class="chips">' + CRIT.map(function (x) {
+      var st = c.ev[x.k][0];
+      return '<button class="chip ' + st + '" data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
+    }).join('') + '</div>';
+  }
+  document.getElementById('tbody').innerHTML = rows.map(function (c, i) {
+    return '<tr class="row" data-i="' + i + '"><td class="c-check"><input type="checkbox" class="checkbox" data-i="' + i + '" aria-label="Shortlist ' + esc(c.n) + '"></td>' +
+      '<td><button class="namebtn" data-i="' + i + '">' + esc(c.n) + '</button></td>' +
+      '<td>' + scoreCell(c, i) + '</td>' +
+      '<td>' + esc(c.loc) + '</td><td>' + c.yrs + '</td><td>' + esc(c.title) + '</td><td class="muted">' + esc(c.upd) + '</td></tr>';
+  }).join('');
+
+  // ---- shortlist ------------------------------------------------------
+  var picked = [];
+  var notice = document.getElementById('notice');
+  function showNotice(msg, warn) {
+    notice.textContent = msg; notice.className = 'notice show' + (warn ? ' warn' : '');
+  }
+  document.getElementById('tbody').addEventListener('change', function (e) {
+    if (!e.target.classList.contains('checkbox')) return;
+    var i = +e.target.dataset.i, n = rows[i].n, at = picked.indexOf(n);
+    if (e.target.checked) {
+      if (picked.length >= 3) {
+        e.target.checked = false;
+        showNotice('You can shortlist up to 3 candidates. Untick someone first to pick a different person.', true);
+        return;
+      }
+      picked.push(n);
+    } else if (at >= 0) picked.splice(at, 1);
+    e.target.closest('tr').classList.toggle('picked', e.target.checked);
+    document.getElementById('n-short').textContent = picked.length;
+    notice.className = 'notice';
+  });
+  document.getElementById('done').addEventListener('click', function () {
+    showNotice(picked.length ? 'Thanks, your shortlist has been recorded: ' + picked.join(', ') + '. You can carry on looking at the list.' : 'Thanks, you have not shortlisted anyone. You can carry on looking at the list.');
+  });
+
+  // ---- job description panel -----------------------------------------
+  var jd = document.getElementById('jd'), jdT = document.getElementById('jd-toggle');
+  function setJd(open) { jd.classList.toggle('open', open); jdT.setAttribute('aria-expanded', open); jdT.textContent = open ? 'Hide job description' : 'View job description'; }
+  jdT.addEventListener('click', function () { setJd(!jd.classList.contains('open')); });
+  document.getElementById('jd-close').addEventListener('click', function () { setJd(false); });
+
+  // ---- floating tooltip (A) and popover (B) ---------------------------
+  var tip = document.getElementById('tip'), pop = document.getElementById('pop');
+  function place(el, anchor) {
+    var r = anchor.getBoundingClientRect();
+    el.classList.add('show');
+    var w = el.offsetWidth, h = el.offsetHeight;
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    var top = r.bottom + 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+    el.style.left = left + 'px'; el.style.top = top + 'px';
+  }
+  function tipHtml(c) {
+    var p = c.dist, sum = 0, parts = [];
+    p.forEach(function (v, l) { sum += l * v; parts.push(l + '×' + v + '%'); });
+    var e = (sum / 100).toFixed(2);
+    var rows = '';
+    for (var l = 4; l >= 0; l--) rows += '<span>Level ' + l + '</span><span class="barwrap"><span class="bar" style="display:block;width:' + p[l] + '%"></span></span><span class="pct">' + p[l] + '%</span>';
+    return '<div class="tip-h">How ' + esc(c.n) + ' scores</div><div class="dist">' + rows + '</div>' +
+      '<div class="sum">' + parts.slice().reverse().join(' + ') + '<br>= <b>' + e + '</b> average level ÷ 4 = <b>' + c.fit + '%</b></div>' +
+      '<div class="conf"><span>Confidence</span><b>' + c.conf + '%</b></div>';
+  }
+  function popHtml(c) {
+    var groups = { met: [], not: [], unk: [] };
+    CRIT.forEach(function (x) { groups[c.ev[x.k][0]].push(x.full); });
+    var h = '<div class="tip-h" style="margin:0">' + esc(c.n) + ': ' + counts(c).met + ' of 5 must-haves met</div>';
+    [['met', 'Met'], ['not', 'Not met'], ['unk', 'Unknown']].forEach(function (g) {
+      if (!groups[g[0]].length) return;
+      h += '<div class="pop-sec"><h4>' + g[1] + '</h4>' + groups[g[0]].map(function (t) { return '<div class="pop-row">' + ic(g[0], 14) + '<span>' + esc(t) + '</span></div>'; }).join('') + '</div>';
+    });
+    return h;
+  }
+  function hideTip() { tip.classList.remove('show'); }
+  function hidePop() { pop.classList.remove('show'); }
+  if (V === 'a') {
+    var tbody = document.getElementById('tbody');
+    tbody.addEventListener('mouseover', function (e) { var b = e.target.closest('.fitbtn'); if (b) { tip.innerHTML = tipHtml(rows[+b.dataset.i]); place(tip, b); } });
+    tbody.addEventListener('mouseout', function (e) { if (e.target.closest('.fitbtn')) hideTip(); });
+    tbody.addEventListener('focusin', function (e) { var b = e.target.closest('.fitbtn'); if (b) { tip.innerHTML = tipHtml(rows[+b.dataset.i]); place(tip, b); } });
+    tbody.addEventListener('focusout', function (e) { if (e.target.closest('.fitbtn')) hideTip(); });
+  }
+  if (V === 'b') {
+    var openFor = null;
+    document.getElementById('tbody').addEventListener('click', function (e) {
+      var b = e.target.closest('.countbtn'); if (!b) return;
+      e.stopPropagation();
+      if (openFor === b) { hidePop(); openFor = null; return; }
+      pop.innerHTML = popHtml(rows[+b.dataset.i]); place(pop, b); openFor = b;
+    });
+    document.addEventListener('click', function (e) { if (!pop.contains(e.target)) { hidePop(); openFor = null; } });
+  }
+  window.addEventListener('scroll', function () { hideTip(); hidePop(); }, true);
+
+  // ---- drawer ---------------------------------------------------------
+  var drawer = document.getElementById('drawer'), cur = -1, asked = {}, focusK = null;
+  function bars() { return '<div class="gbar" style="width:96%"></div><div class="gbar" style="width:82%"></div>'; }
+  function critBlock(c, x) {
+    var e = c.ev[x.k], st = e[0], key = c.n + x.k;
+    var h = '<div class="crit' + (focusK === x.k ? ' focus' : '') + '" data-k="' + x.k + '"><div class="crit-h">' + ic(st, 16) + '<span>' + esc(x.full) + '</span><span class="state">' + STATE_LABEL[st] + '</span></div>';
+    if (st === 'unk') {
+      h += '<div class="src">Source</div><div class="none">No evidence found in the CV or profile.</div>' +
+        (asked[key] ? '<button class="ask" disabled>Request sent ✓</button>' : '<button class="ask" data-ask="' + key + '">Ask candidate to confirm</button>');
+    } else {
+      h += '<div class="src">' + esc(e[1]) + '</div><div class="doc">' + bars() + '<div class="quote">' + hl(e[2]) + '</div>' + bars() + '</div>';
+    }
+    return h + '</div>';
+  }
+  function renderDrawer() {
+    var c = rows[cur];
+    var head = '<div class="d-head"><div class="d-top"><div class="stepper"><button class="iconbtn" id="prev" aria-label="Previous candidate"' + (cur === 0 ? ' disabled' : '') + '>‹</button><span>' + (cur + 1) + ' of ' + rows.length + '</span><button class="iconbtn" id="next" aria-label="Next candidate"' + (cur === rows.length - 1 ? ' disabled' : '') + '>›</button></div><button class="iconbtn" id="dclose" aria-label="Close">✕</button></div>' +
+      '<h2 class="d-name">' + esc(c.n) + '</h2><div class="d-sub">' + esc(c.title) + ' · ' + esc(c.loc) + '</div></div>';
+    var body;
+    if (V === 'c') body = CRIT.map(function (x) { return critBlock(c, x); }).join('');
+    else body = '<dl style="margin:0"><div class="kv"><dt>Current job title</dt><dd>' + esc(c.title) + '</dd></div><div class="kv"><dt>Location</dt><dd>' + esc(c.loc) + '</dd></div><div class="kv"><dt>Years of experience</dt><dd>' + c.yrs + '</dd></div><div class="kv"><dt>Last updated</dt><dd>' + esc(c.upd) + '</dd></div></dl>';
+    drawer.innerHTML = head + '<div class="d-body" id="dbody">' + body + '</div><div class="d-foot"><a href="#" class="full" id="fullp">View full profile</a><span class="soon" id="soon" hidden>Not available in this prototype</span></div>';
+    var f = drawer.querySelector('.crit.focus');
+    if (f) f.scrollIntoView({ block: 'nearest' });
+  }
+  function openDrawer(i, k) {
+    cur = i; focusK = k || null; hideTip(); hidePop();
+    renderDrawer(); drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
+    document.querySelectorAll('tr.row').forEach(function (r) { r.classList.toggle('sel', +r.dataset.i === i); });
+    document.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', +b.dataset.i === i && b.dataset.k === focusK); });
+  }
+  function closeDrawer() {
+    drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); cur = -1;
+    document.querySelectorAll('tr.row.sel').forEach(function (r) { r.classList.remove('sel'); });
+    document.querySelectorAll('.chip.on').forEach(function (b) { b.classList.remove('on'); });
+  }
+  document.getElementById('tbody').addEventListener('click', function (e) {
+    var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip');
+    if (ch) openDrawer(+ch.dataset.i, ch.dataset.k);
+    else if (n) openDrawer(+n.dataset.i, null);
+  });
+  drawer.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('#dclose')) closeDrawer();
+    else if (t.closest('#prev') && cur > 0) openDrawer(cur - 1, null);
+    else if (t.closest('#next') && cur < rows.length - 1) openDrawer(cur + 1, null);
+    else if (t.closest('#fullp')) { e.preventDefault(); document.getElementById('soon').hidden = false; }
+    else if (t.dataset.ask) { asked[t.dataset.ask] = true; var top = document.getElementById('dbody').scrollTop; renderDrawer(); document.getElementById('dbody').scrollTop = top; }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { hideTip(); hidePop(); closeDrawer(); } });
+})();
+</script>
+</body>
+</html>
