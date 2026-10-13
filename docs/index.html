@@ -41,6 +41,7 @@
   .jobline .sep { color: var(--faint); margin: 0 6px; font-weight: 400; }
   .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; font-size: 16px; }
   .actions { display: flex; align-items: center; gap: 14px; }
+  .subline { color: var(--muted); font-size: 13px; }
   .count-note { color: var(--muted); }
   .count-note b { color: var(--ink); }
   .btn { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 600; }
@@ -81,9 +82,9 @@
   /* Variant C: chips */
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 20px; font-size: 12.5px; font-weight: 500; line-height: 18px; white-space: nowrap; }
-  .chip.met { background: var(--ink); color: #fff; border: 1.5px solid var(--ink); }
+  .chip.met { background: #ecebe6; color: var(--ink); border: 1.5px solid #ecebe6; }
   .chip.not { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
-  .chip.unk { background: #fff; color: var(--muted); border: 1.5px dashed var(--faint); }
+  .chip.unk { background: #fff; color: #5c5c61; border: 1.5px dashed var(--faint); }
   .chip:hover { box-shadow: 0 0 0 2px var(--accent-bg); }
   .chip.on { box-shadow: 0 0 0 2px var(--accent); }
   .mark { width: 14px; height: 14px; display: inline-block; }
@@ -128,8 +129,8 @@
   .iconbtn:hover:not(:disabled) { border-color: var(--line); background: var(--page); }
   .iconbtn:disabled { color: var(--bar); cursor: default; }
 
-  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 480px; background: var(--surface); box-shadow: -8px 0 28px rgba(0,0,0,.14); border-left: 1px solid var(--ink); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s ease-in-out; }
-  .drawer.open { transform: translateX(0); }
+  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 480px; background: var(--surface); box-shadow: -8px 0 28px rgba(0,0,0,.14); border-left: 1px solid var(--ink); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .3s ease-in-out, visibility 0s linear .3s; }
+  .drawer.open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
   .d-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
   .d-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .stepper { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
@@ -164,8 +165,12 @@
 <div class="wrap">
   <main class="main">
     <div class="topbar">
-      <div class="jobline">Accountant, Manchester (hybrid)<span class="sep">·</span><button class="linkbtn" id="jd-toggle" aria-expanded="false" aria-controls="jd">View job description</button></div>
+      <div>
+        <div class="jobline">Accountant, Manchester (hybrid)<span class="sep">·</span><button class="linkbtn" id="jd-toggle" aria-expanded="false" aria-controls="jd">View job description</button></div>
+        <div class="subline">You searched using this advert. No filters are applied.</div>
+      </div>
       <div class="actions">
+        <span class="subline" id="scored"></span>
         <span class="count-note">Shortlisted: <b id="n-short">0</b> of 3</span>
         <button class="btn" id="done">Done</button>
       </div>
@@ -187,30 +192,33 @@
       </div>
       <div class="muted">Manchester, hybrid (two days a week in the office) · permanent</div>
       <p>Our client is a mid-sized UK distribution company. As part of a small finance team you will run month-end reporting, prepare management accounts and support the annual audit.</p>
-      <h3>Must have</h3>
+      <h3>What you'll need</h3>
       <ul>
-        <li>Experience in an accountant role</li>
-        <li>A recognised qualification (ACA, ACCA or CIMA)</li>
-        <li>Month-end reporting experience</li>
+        <li>Experience working as an accountant</li>
+        <li>A recognised accounting qualification (ACA, ACCA or CIMA)</li>
+        <li>Hands-on month-end reporting experience</li>
         <li>Based in the UK</li>
-        <li>Right to work in the UK</li>
+        <li>The right to work in the UK</li>
       </ul>
+      <h3>About the role</h3>
+      <p>You'll work closely with the finance director and a team of four, with a hybrid pattern of two days in the Manchester office.</p>
     </div>
   </aside>
 </div>
 
 <div class="float" id="tip" role="tooltip"></div>
-<div class="float" id="pop" role="dialog" aria-label="Must-have breakdown"></div>
+<div class="float" id="pop" role="dialog" aria-label="Requirement breakdown"></div>
 <aside class="drawer" id="drawer" aria-hidden="true" aria-label="Candidate detail"></aside>
 
 <script>
 (function () {
+  var SCORED = 500, SHOWN = 10;   // scored-subset line above the table
   var CRIT = [
-    { k: 'role',  short: 'Accountant role', full: 'Experience in an accountant role' },
-    { k: 'qual',  short: 'Qualified',       full: 'A recognised qualification (ACA, ACCA or CIMA)' },
-    { k: 'month', short: 'Month-end',       full: 'Month-end reporting experience' },
+    { k: 'role',  short: 'Accountant role', full: 'Experience working as an accountant' },
+    { k: 'qual',  short: 'Qualified',       full: 'A recognised accounting qualification (ACA, ACCA or CIMA)' },
+    { k: 'month', short: 'Month-end',       full: 'Hands-on month-end reporting experience' },
     { k: 'uk',    short: 'UK-based',        full: 'Based in the UK' },
-    { k: 'rtw',   short: 'Right to work',   full: 'Right to work in the UK' }
+    { k: 'rtw',   short: 'Right to work',   full: 'The right to work in the UK' }
   ];
   var STATE_LABEL = { met: 'Met', not: 'Not met', unk: 'Unknown' };
 
@@ -332,11 +340,11 @@
   }
   function bandB(c) {
     var k = counts(c);
-    if (k.not === 0 && k.unk === 0) return 'All must-haves met';
+    if (k.not === 0 && k.unk === 0) return 'All requirements met';
     if (k.not === 0) return 'Check ' + k.unk + ' unknown';
     return k.not + ' not met';
   }
-  // Reason shown in B's drawer for a not-met must-have (from the record).
+  // Reason shown in B's drawer for a not-met requirement (from the record).
   function whyNot(c, k) {
     return { role: 'Current role: ' + c.title, uk: 'Based in ' + c.loc, month: 'No month-end reporting in the record', qual: 'No recognised qualification in the record', rtw: 'No right to work in the record' }[k];
   }
@@ -367,7 +375,7 @@
   function idx(n) { return rows.map(function (c) { return c.n; }).indexOf(n); }
 
   // ---- table ----------------------------------------------------------
-  var scoreHead = V === 'a' ? 'Fit' : V === 'b' ? 'Must-haves' : 'Must-have criteria';
+  var scoreHead = V === 'a' ? 'Fit' : V === 'b' ? 'Requirements' : 'Requirements';
   document.getElementById('thead').innerHTML = '<tr><th class="c-check"><span class="sr" style="position:absolute;left:-9999px">Shortlist</span></th><th>Name</th><th>' + scoreHead + '</th><th>Location</th><th>Years of experience</th><th>Current job title</th><th>Last updated</th></tr>';
   if (V === 'c') {
     document.getElementById('legend').hidden = false;
@@ -378,7 +386,7 @@
 
   function scoreCell(c, i) {
     if (V === 'a') return '<button class="fitbtn" data-i="' + i + '" aria-label="' + c.fit + ' percent, ' + bandA(c.fit) + '. Show how this is calculated"><span class="fit-num">' + c.fit + '%</span><span class="band">' + bandA(c.fit) + '</span></button>';
-    if (V === 'b') return '<div class="bcell"><span class="blabel">' + bandB(c) + '</span><button type="button" class="countbtn" data-i="' + i + '" aria-label="Show must-have details for ' + esc(c.n) + ' (' + counts(c).met + ' of 5 met)"><span>' + counts(c).met + ' of 5 must-haves met</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
+    if (V === 'b') return '<div class="bcell"><span class="blabel">' + bandB(c) + '</span><button type="button" class="countbtn" data-i="' + i + '" aria-label="Show requirement details for ' + esc(c.n) + ' (' + counts(c).met + ' of 5 met)"><span>' + counts(c).met + ' of 5 requirements met</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
     return '<div class="chips">' + CRIT.map(function (x) {
       var st = c.ev[x.k][0];
       return '<button class="chip ' + st + '" data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
@@ -392,6 +400,7 @@
   }).join('');
 
   // ---- shortlist ------------------------------------------------------
+  document.getElementById('scored').textContent = 'Showing the top ' + SHOWN + ' of the ' + SCORED + ' closest matches';
   var picked = [], T0 = Date.now();
   var notice = document.getElementById('notice');
   function showNotice(msg, warn) {
@@ -446,7 +455,7 @@
   function popHtml(c) {
     var groups = { met: [], not: [], unk: [] };
     CRIT.forEach(function (x) { groups[c.ev[x.k][0]].push(x.full); });
-    var h = '<div class="tip-h" style="margin:0">' + esc(c.n) + ': ' + counts(c).met + ' of 5 must-haves met</div>';
+    var h = '<div class="tip-h" style="margin:0">' + esc(c.n) + ': ' + counts(c).met + ' of 5 requirements met</div>';
     [['met', 'Met'], ['not', 'Not met'], ['unk', 'Unknown']].forEach(function (g) {
       if (!groups[g[0]].length) return;
       h += '<div class="pop-sec"><h4>' + g[1] + '</h4>' + groups[g[0]].map(function (t) { return '<div class="pop-row">' + ic(g[0], 14) + '<span>' + esc(t) + '</span></div>'; }).join('') + '</div>';
@@ -465,7 +474,7 @@
   window.addEventListener('scroll', function () { hideTip(); hidePop(); }, true);
 
   // ---- drawer ---------------------------------------------------------
-  var drawer = document.getElementById('drawer'), mode = null, cur = -1, asked = {}, focusK = null;
+  var drawer = document.getElementById('drawer'), trigger = null, mode = null, cur = -1, asked = {}, focusK = null;
   function bars() { return '<div class="gbar" style="width:96%"></div><div class="gbar" style="width:82%"></div>'; }
   var RANK = { not: 0, unk: 1, met: 2 }, capShown = false;
   function critBlock(c, x) {
@@ -488,7 +497,7 @@
     capShown = false;
     if (V === 'c') body = CRIT.map(function (x, i) { return { x: x, i: i }; }).sort(function (p, q) { return (RANK[c.ev[p.x.k][0]] - RANK[c.ev[q.x.k][0]]) || (p.i - q.i); }).map(function (o) { return critBlock(c, o.x); }).join('');
     else if (mode === 'list') {
-      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + esc(bandB(c)) + ' · ' + counts(c).met + ' of 5 must-haves met</div></div>';
+      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + esc(bandB(c)) + ' · ' + counts(c).met + ' of 5 requirements met</div></div>';
       [['not', 'Not met'], ['unk', 'Unknown'], ['met', 'Met']].forEach(function (t) {
         var items = CRIT.filter(function (x) { return c.ev[x.k][0] === t[0]; });
         if (!items.length) return;
@@ -503,22 +512,26 @@
     var f = drawer.querySelector('.crit.focus');
     if (f) f.scrollIntoView({ block: 'nearest' });
   }
-  function openDrawer(i, k, m) {
+  function openDrawer(i, k, m, trig) {
+    if (trig && !drawer.classList.contains('open')) trigger = trig;
     cur = i; focusK = k || null; mode = m || null; hideTip(); hidePop();
     renderDrawer(); drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
     document.querySelectorAll('tr.row').forEach(function (r) { r.classList.toggle('sel', +r.dataset.i === i); });
     document.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', +b.dataset.i === i && b.dataset.k === focusK); });
+    drawer.querySelector('#dclose').focus({ preventScroll: true });
   }
   function closeDrawer() {
+    var wasOpen = drawer.classList.contains('open');
     drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); cur = -1;
     document.querySelectorAll('tr.row.sel').forEach(function (r) { r.classList.remove('sel'); });
     document.querySelectorAll('.chip.on').forEach(function (b) { b.classList.remove('on'); });
+    if (wasOpen && trigger) trigger.focus();
   }
   document.getElementById('tbody').addEventListener('click', function (e) {
     var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip'), cb = e.target.closest('.countbtn');
-    if (cb) openDrawer(+cb.dataset.i, null, 'list');
-    else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k);
-    else if (n) openDrawer(+n.dataset.i, null);
+    if (cb) openDrawer(+cb.dataset.i, null, 'list', cb);
+    else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k, null, ch);
+    else if (n) openDrawer(+n.dataset.i, null, null, n);
   });
   drawer.addEventListener('click', function (e) {
     var t = e.target;

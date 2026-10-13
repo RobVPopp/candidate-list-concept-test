@@ -5,8 +5,8 @@ One static page, three variants chosen by the address. Fictional data, no networ
 | Task link | Variant | What the participant sees |
 | --- | --- | --- |
 | `?v=a` | A: % fit | Percentage plus band ("Excellent fit"). Hovering (or tabbing to) the fit shows an overlay in the style of Trevor's (intro text with confidence, labelled 0–4 levels with bars, weighted-average arithmetic). Clicking a name opens a plain profile panel. Order: by fit. |
-| `?v=b` | B: Band and count | Band plus "4 of 5 must-haves met". The label comes only from the must-have states ("All must-haves met", "Check N unknown", "N not met"). Clicking the count button opens the drawer with Not met / Unknown / Met, a reason for each not met, and no evidence. Same plain profile panel as A. Order: by must-haves. |
-| `?v=c` | C: Criteria and evidence | Five criteria chips per row (filled ✓ met, outlined ✕ not met, dashed – unknown). A chip or name opens a drawer with the source for each criterion, keyword highlighted between grey bars of CV text, "Ask candidate to confirm" on unknowns, a stepper and "View full profile". Order: by must-haves. |
+| `?v=b` | B: Band and count | Band plus "4 of 5 requirements met". The label comes only from the must-have states ("All requirements met", "Check N unknown", "N not met"). Clicking the count button opens the drawer with Not met / Unknown / Met, a reason for each not met, and no evidence. Same plain profile panel as A. Order: by requirements. |
+| `?v=c` | C: Criteria and evidence | Five criteria chips per row (filled ✓ met, outlined ✕ not met, dashed – unknown). A chip or name opens a drawer with the source for each criterion, keyword highlighted between grey bars of CV text, "Ask candidate to confirm" on unknowns, a stepper and "View full profile". Order: by requirements. |
 
 An address with no or an unrecognised `v` shows variant A.
 
