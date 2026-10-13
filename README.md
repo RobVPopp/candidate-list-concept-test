@@ -10,17 +10,21 @@ One static page, three variants chosen by the address. Fictional data, no networ
 
 An address with no or an unrecognised `v` shows variant A.
 
+## Candidate sets
+
+`?set=1|2|3` picks one of three invented candidate sets (`docs/data.js`), so a participant who sees all three variants never sees the same ten people twice. If `set` is missing the default is a→1, b→2, c→3. Every set keeps the same criteria pattern per row, so ranks and the three traps line up. Do not show the set or variant anywhere on screen.
+
 ## Shared across all three
 
 - Header "Accountant, Manchester (hybrid) · View job description". The link opens a side panel beside the table (closed by default) with the job description text from the plan.
 - Same ten candidates and table columns (name, score display, location, years, current title, last updated).
-- "Shortlist" checkbox per row, capped at three (a fourth shows a message). "Done" shows who was shortlisted, so the choice can be read from the recording. The page stays usable afterwards for the follow-up questions.
+- "Shortlist" checkbox per row, capped at three (a fourth shows a message). "Done" shows who was shortlisted and the time taken since the page loaded, so the choice can be read from the recording. The page stays usable afterwards for the follow-up questions.
 - "View full profile" is a stub ("Not available in this prototype").
 
 ## Notes
 
 - Variant A's percentages come from a per-candidate 0–4 distribution whose probability-weighted average level ÷ 4 equals the percentage in the plan (checked for all ten). The distributions and confidence figures are invented; swap in Trevor's if you want an exact match.
-- Bands in B: Excellent = 5 met; Strong = 4 met, none failed; Partial = 4 met, one failed; Weak = 3 or fewer met. A: 90+ Excellent, 80–89 Strong, 70–79 Good, below 70 Partial.
+- B's label comes only from the must-have states: "All must-haves met", "Check N unknown" (none failed), or "N not met". A's bands: 90+ Excellent, 80–89 Strong, 70–79 Good, below 70 Partial.
 - Styling reuses the design system's table, badge pill, checkbox and drawer patterns and Instrument Sans, in greyscale with one blue accent. No logo, nav or Popp colours. The page carries `noindex`.
 - Instrument Sans loads from Google Fonts; the page falls back to the system font offline.
 

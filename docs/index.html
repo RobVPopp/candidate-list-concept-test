@@ -71,9 +71,13 @@
   .band { font-weight: 500; color: var(--ink); background: #ececea; border: 1px solid var(--line); border-radius: 20px; padding: 1px 10px; font-size: 13px; }
 
   /* Variant B: band + count */
-  .countbtn { background: none; border: 0; padding: 4px 0; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
-  .countbtn .band { font-weight: 600; margin-bottom: 2px; }
-  .countbtn .cnt { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .bcell { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .blabel { font-weight: 600; }
+  .countbtn { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid var(--faint); border-radius: 6px; padding: 3px 8px 3px 10px; font-size: 13px; font-weight: 500; }
+  .countbtn:hover { border-color: var(--ink); background: var(--page); }
+  .countbtn.on, .countbtn:active { border-color: var(--accent); background: var(--accent-bg); }
+  .countbtn .chev { transition: transform .15s; }
+  .countbtn:hover .chev { transform: translateX(2px); }
 
   /* Variant C: chips */
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -125,8 +129,8 @@
   .iconbtn:hover:not(:disabled) { border-color: var(--line); background: var(--page); }
   .iconbtn:disabled { color: var(--bar); cursor: default; }
 
-  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 480px; background: var(--surface); box-shadow: -8px 0 28px rgba(0,0,0,.14); border-left: 1px solid var(--ink); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s ease-in-out; }
-  .drawer.open { transform: translateX(0); }
+  .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 480px; background: var(--surface); box-shadow: -8px 0 28px rgba(0,0,0,.14); border-left: 1px solid var(--ink); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); visibility: hidden; transition: transform .3s ease-in-out, visibility 0s linear .3s; }
+  .drawer.open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
   .d-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
   .d-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .stepper { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
@@ -150,6 +154,9 @@
   .ask { margin-top: 10px; background: #fff; border: 1.5px solid var(--ink); border-radius: 6px; padding: 7px 14px; font-weight: 600; }
   .ask:hover:not(:disabled) { background: var(--page); }
   .ask:disabled { border-color: var(--faint); color: var(--muted); cursor: default; }
+  .asked { margin-top: 10px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .cap { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+  .why { color: var(--muted); font-size: 13px; margin: 0 0 0 24px; padding-bottom: 6px; }
   .full { display: inline-block; font-weight: 600; font-size: 14px; }
   .soon { color: var(--muted); font-size: 12px; margin-left: 10px; }
 </style>
@@ -195,8 +202,9 @@
 
 <div class="float" id="tip" role="tooltip"></div>
 <div class="float" id="pop" role="dialog" aria-label="Must-have breakdown"></div>
-<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Candidate detail"></aside>
+<aside class="drawer" id="drawer" role="dialog" aria-hidden="true" aria-label="Candidate detail"></aside>
 
+<script src="data.js"></script>
 <script>
 (function () {
   var CRIT = [
@@ -208,77 +216,14 @@
   ];
   var STATE_LABEL = { met: 'Met', not: 'Not met', unk: 'Unknown' };
 
-  // ev: [status, source, text with [[keyword]] highlight]. Unknown has no text.
-  // Fit and confidence are for variant A only; all other fields are shared.
-  var C = [
-    { n: 'Priya Nair', loc: 'Manchester', yrs: 7, title: 'Senior Accountant', upd: '2 weeks ago', fit: 94, conf: 71, ev: {
-      role: ['met', 'CV · Experience', 'Senior [[Accountant]], Northern Freight Ltd, 2019 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2018'],
-      month: ['met', 'CV · Experience', 'Owned [[month-end]] close and reporting for three entities'],
-      uk: ['met', 'Profile · Location', '[[Manchester]], United Kingdom'],
-      rtw: ['unk'] } },
-    { n: 'Tomas Weber', loc: 'Berlin', yrs: 9, title: 'Senior Accountant', upd: '1 month ago', fit: 92, conf: 68, ev: {
-      role: ['met', 'CV · Experience', 'Senior [[Accountant]], Brandt Logistik GmbH, 2017 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2016'],
-      month: ['met', 'CV · Experience', 'Prepared [[month-end]] reporting packs for group finance'],
-      uk: ['not', 'Profile · Location', '[[Berlin]], Germany. No UK address on CV'],
-      rtw: ['unk'] } },
-    { n: 'Hannah Clarke', loc: 'Leeds', yrs: 5, title: 'Financial Accountant', upd: '1 month ago', fit: 91, conf: 88, ev: {
-      role: ['met', 'CV · Experience', '[[Financial Accountant]], Calder Foods, 2020 to present'],
-      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2020'],
-      month: ['met', 'CV · Experience', 'Delivered [[month-end]] reporting within five working days'],
-      uk: ['met', 'Profile · Location', '[[Leeds]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
-    { n: 'Samuel Okoye', loc: 'London', yrs: 6, title: 'Management Accountant', upd: '3 weeks ago', fit: 89, conf: 76, ev: {
-      role: ['met', 'CV · Experience', '[[Management Accountant]], Harlow Retail, 2019 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACA]] qualified, 2019'],
-      month: ['unk'],
-      uk: ['met', 'Profile · Location', '[[London]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', 'Right to work: [[Settled status]]'] } },
-    { n: 'Aiko Tanaka', loc: 'Bristol', yrs: 4, title: 'Accountant', upd: '2 months ago', fit: 86, conf: 72, ev: {
-      role: ['met', 'CV · Experience', '[[Accountant]], Severn Packaging, 2021 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2021'],
-      month: ['met', 'CV · Experience', 'Responsible for [[month-end]] journals and reconciliations'],
-      uk: ['met', 'Profile · Location', '[[Bristol]], United Kingdom'],
-      rtw: ['unk'] } },
-    { n: 'Daniel Evans', loc: 'Cardiff', yrs: 8, title: 'Bookkeeper', upd: '3 years ago', fit: 83, conf: 61, ev: {
-      role: ['not', 'CV · Experience', '[[Bookkeeper]], Evans & Co, 2016 to 2023. No accountant role listed'],
-      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2017'],
-      month: ['met', 'CV · Experience', 'Prepared [[month-end]] trial balance for small clients'],
-      uk: ['met', 'Profile · Location', '[[Cardiff]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
-    { n: 'Meera Shah', loc: 'Birmingham', yrs: 3, title: 'Accountant', upd: '1 month ago', fit: 80, conf: 74, ev: {
-      role: ['met', 'CV · Experience', '[[Accountant]], Midlands Print, 2022 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACA]] qualified, 2022'],
-      month: ['unk'],
-      uk: ['met', 'Profile · Location', '[[Birmingham]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', 'Right to work: [[Indefinite leave to remain]]'] } },
-    { n: 'Lucas Martin', loc: 'Madrid', yrs: 6, title: 'Accountant', upd: '2 months ago', fit: 78, conf: 66, ev: {
-      role: ['met', 'CV · Experience', '[[Accountant]], Iberia Textiles SL, 2019 to present'],
-      qual: ['met', 'CV · Qualifications', '[[ACCA]] qualified, 2018'],
-      month: ['met', 'CV · Experience', 'Ran [[month-end]] close for two subsidiaries'],
-      uk: ['not', 'Profile · Location', '[[Madrid]], Spain. No UK address on CV'],
-      rtw: ['unk'] } },
-    { n: 'Chloe Bennett', loc: 'Edinburgh', yrs: 2, title: 'Junior Accountant', upd: '1 month ago', fit: 70, conf: 55, ev: {
-      role: ['met', 'CV · Experience', '[[Junior Accountant]], Forth Estates, 2023 to present'],
-      qual: ['unk'],
-      month: ['not', 'CV · Experience', 'Duties listed are [[accounts payable]] and expenses. No month-end reporting'],
-      uk: ['met', 'Profile · Location', '[[Edinburgh]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } },
-    { n: 'Rahul Verma', loc: 'Glasgow', yrs: 10, title: 'Payroll Officer', upd: '4 months ago', fit: 64, conf: 52, ev: {
-      role: ['not', 'CV · Experience', '[[Payroll Officer]], Clyde Services, 2015 to present. No accountant role listed'],
-      qual: ['met', 'CV · Qualifications', '[[CIMA]] qualified, 2014'],
-      month: ['unk'],
-      uk: ['met', 'Profile · Location', '[[Glasgow]], United Kingdom'],
-      rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } }
-  ];
-  var ORDER_BC = ['Hannah Clarke', 'Priya Nair', 'Samuel Okoye', 'Aiko Tanaka', 'Meera Shah', 'Daniel Evans', 'Tomas Weber', 'Lucas Martin', 'Chloe Bennett', 'Rahul Verma'];
-
-  var q = new URLSearchParams(location.search).get('v');
-  var V = (q || 'a').toLowerCase();
+  var params = new URLSearchParams(location.search);
+  var V = (params.get('v') || 'a').toLowerCase();
   if (['a', 'b', 'c'].indexOf(V) < 0) V = 'a';
-
-  var rows = V === 'a' ? C.slice() : ORDER_BC.map(function (n) { return C.filter(function (c) { return c.n === n; })[0]; });
+  var SET = params.get('set');
+  if (!window.SETS[SET]) SET = { a: 1, b: 2, c: 3 }[V];
+  var C = window.SETS[SET];
+  var rows = V === 'a' ? C.slice() : window.BC_ORDER.map(function (i) { return C[i]; });
+  var T0 = Date.now();
 
   // ---- derived values -------------------------------------------------
   function counts(c) {
@@ -288,10 +233,9 @@
   }
   function bandB(c) {
     var k = counts(c);
-    if (k.met === 5) return 'Excellent fit';
-    if (k.met === 4 && k.not === 0) return 'Strong fit';
-    if (k.met === 4) return 'Partial fit';
-    return 'Weak fit';
+    if (k.not === 0 && k.unk === 0) return 'All must-haves met';
+    if (k.not === 0) return 'Check ' + k.unk + ' unknown';
+    return k.not + ' not met';
   }
   function bandA(f) { return f >= 90 ? 'Excellent fit' : f >= 80 ? 'Strong fit' : f >= 70 ? 'Good fit' : 'Partial fit'; }
 
@@ -331,7 +275,7 @@
 
   function scoreCell(c, i) {
     if (V === 'a') return '<button class="fitbtn" data-i="' + i + '" aria-label="' + c.fit + ' percent, ' + bandA(c.fit) + '. Show how this is calculated"><span class="fit-num">' + c.fit + '%</span><span class="band">' + bandA(c.fit) + '</span></button>';
-    if (V === 'b') return '<button class="countbtn" data-i="' + i + '"><span class="band">' + bandB(c) + '</span><span class="cnt">' + counts(c).met + ' of 5 must-haves met</span></button>';
+    if (V === 'b') return '<div class="bcell"><span class="blabel">' + bandB(c) + '</span><button type="button" class="countbtn" data-i="' + i + '" aria-label="Show must-have details for ' + esc(c.n) + ' (' + counts(c).met + ' of 5 met)"><span>' + counts(c).met + ' of 5 must-haves met</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
     return '<div class="chips">' + CRIT.map(function (x) {
       var st = c.ev[x.k][0];
       return '<button class="chip ' + st + '" data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
@@ -366,7 +310,8 @@
     notice.className = 'notice';
   });
   document.getElementById('done').addEventListener('click', function () {
-    showNotice(picked.length ? 'Thanks, your shortlist has been recorded: ' + picked.join(', ') + '. You can carry on looking at the list.' : 'Thanks, you have not shortlisted anyone. You can carry on looking at the list.');
+    var sec = Math.round((Date.now() - T0) / 1000), took = Math.floor(sec / 60) + ' min ' + (sec % 60) + ' s';
+    showNotice((picked.length ? 'Your shortlist: ' + picked.join(', ') + '.' : 'You have not shortlisted anyone.') + ' Time taken: ' + took + '. You can carry on looking at the list.');
   });
 
   // ---- job description panel -----------------------------------------
@@ -417,16 +362,24 @@
   window.addEventListener('scroll', function () { hideTip(); hidePop(); }, true);
 
   // ---- drawer ---------------------------------------------------------
-  var drawer = document.getElementById('drawer'), mode = null, cur = -1, asked = {}, focusK = null;
+  var drawer = document.getElementById('drawer'), trigger = null, mode = null, cur = -1, asked = {}, focusK = null;
   function bars() { return '<div class="gbar" style="width:96%"></div><div class="gbar" style="width:82%"></div>'; }
+  var RANK = { not: 0, unk: 1, met: 2 };
+  function sortedCrit(c) {
+    return CRIT.map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) {
+      return (RANK[c.ev[a.x.k][0]] - RANK[c.ev[b.x.k][0]]) || (a.i - b.i);
+    }).map(function (o) { return o.x; });
+  }
+  var capShown = false;
   function critBlock(c, x) {
     var e = c.ev[x.k], st = e[0], key = c.n + x.k;
     var h = '<div class="crit' + (focusK === x.k ? ' focus' : '') + '" data-k="' + x.k + '"><div class="crit-h">' + ic(st, 16) + '<span>' + esc(x.full) + '</span><span class="state">' + STATE_LABEL[st] + '</span></div>';
     if (st === 'unk') {
-      h += '<div class="src">Source</div><div class="none">No evidence found in the CV or profile.</div>' +
-        (asked[key] ? '<button class="ask" disabled>Request sent ✓</button>' : '<button class="ask" data-ask="' + key + '">Ask candidate to confirm</button>');
+      h += '<div class="src">Source</div><div class="none">Not found in CV or record.</div>' +
+        (asked[key] ? '<div class="asked" role="status">Request noted for the test</div>' : '<button class="ask" data-ask="' + key + '">Ask candidate to confirm</button>');
     } else {
       h += '<div class="src">' + esc(e[1]) + '</div><div class="doc">' + bars() + '<div class="quote">' + hl(e[2]) + '</div>' + bars() + '</div>';
+      if (!capShown) { h += '<p class="cap">Greyed lines stand in for the rest of the CV.</p>'; capShown = true; }
     }
     return h + '</div>';
   }
@@ -435,14 +388,17 @@
     var head = '<div class="d-head"><div class="d-top"><div class="stepper"><button class="iconbtn" id="prev" aria-label="Previous candidate"' + (cur === 0 ? ' disabled' : '') + '>‹</button><span>' + (cur + 1) + ' of ' + rows.length + '</span><button class="iconbtn" id="next" aria-label="Next candidate"' + (cur === rows.length - 1 ? ' disabled' : '') + '>›</button></div><button class="iconbtn" id="dclose" aria-label="Close">✕</button></div>' +
       '<h2 class="d-name">' + esc(c.n) + '</h2><div class="d-sub">' + esc(c.title) + ' · ' + esc(c.loc) + '</div></div>';
     var body;
-    if (V === 'c') body = CRIT.map(function (x) { return critBlock(c, x); }).join('');
+    capShown = false;
+    if (V === 'c') body = sortedCrit(c).map(function (x) { return critBlock(c, x); }).join('');
     else if (mode === 'list') {
-      var g = { met: [], not: [], unk: [] };
-      CRIT.forEach(function (x) { g[c.ev[x.k][0]].push(x.full); });
-      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + bandB(c) + ' · ' + counts(c).met + ' of 5 must-haves met</div></div>';
-      [['met', 'Met'], ['not', 'Not met'], ['unk', 'Unknown']].forEach(function (t) {
-        if (!g[t[0]].length) return;
-        body += '<div class="pop-sec"><h4>' + t[1] + '</h4>' + g[t[0]].map(function (x) { return '<div class="pop-row" style="padding:7px 0;border-bottom:1px solid var(--line)">' + ic(t[0], 16) + '<span>' + esc(x) + '</span></div>'; }).join('') + '</div>';
+      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + esc(bandB(c)) + ' · ' + counts(c).met + ' of 5 must-haves met</div></div>';
+      [['not', 'Not met'], ['unk', 'Unknown'], ['met', 'Met']].forEach(function (t) {
+        var items = CRIT.filter(function (x) { return c.ev[x.k][0] === t[0]; });
+        if (!items.length) return;
+        body += '<div class="pop-sec"><h4>' + t[1] + '</h4>' + items.map(function (x) {
+          var note = t[0] === 'not' ? c.ev.why[x.k] : t[0] === 'unk' ? 'Not found in the record' : '';
+          return '<div class="pop-row" style="padding:7px 0 ' + (note ? '0' : '7px') + '">' + ic(t[0], 16) + '<span>' + esc(x.full) + '</span></div>' + (note ? '<p class="why">' + esc(note) + '</p>' : '');
+        }).join('') + '</div>';
       });
     }
     else body = '<dl style="margin:0"><div class="kv"><dt>Current job title</dt><dd>' + esc(c.title) + '</dd></div><div class="kv"><dt>Location</dt><dd>' + esc(c.loc) + '</dd></div><div class="kv"><dt>Years of experience</dt><dd>' + c.yrs + '</dd></div><div class="kv"><dt>Last updated</dt><dd>' + esc(c.upd) + '</dd></div></dl>';
@@ -450,30 +406,40 @@
     var f = drawer.querySelector('.crit.focus');
     if (f) f.scrollIntoView({ block: 'nearest' });
   }
-  function openDrawer(i, k, m) {
-    cur = i; focusK = k || null; mode = m || null; hideTip(); hidePop();
+  function openDrawer(i, k, m, trig, focusId) {
+    cur = i; focusK = k || null; mode = m || null; if (trig) trigger = trig; hideTip(); hidePop();
     renderDrawer(); drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
     document.querySelectorAll('tr.row').forEach(function (r) { r.classList.toggle('sel', +r.dataset.i === i); });
     document.querySelectorAll('.chip').forEach(function (b) { b.classList.toggle('on', +b.dataset.i === i && b.dataset.k === focusK); });
+    document.querySelectorAll('.countbtn').forEach(function (b) { b.classList.toggle('on', +b.dataset.i === i); });
+    var f = focusId && drawer.querySelector('#' + focusId);
+    if (!f || f.disabled) f = drawer.querySelector('#dclose');
+    f.focus({ preventScroll: true });
+  }
+  function rowTrigger(i) {
+    var r = document.querySelector('tr.row[data-i="' + i + '"]');
+    return r.querySelector(mode === 'list' ? '.countbtn' : '.namebtn');
   }
   function closeDrawer() {
+    var wasOpen = drawer.classList.contains('open');
     drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); cur = -1;
     document.querySelectorAll('tr.row.sel').forEach(function (r) { r.classList.remove('sel'); });
-    document.querySelectorAll('.chip.on').forEach(function (b) { b.classList.remove('on'); });
+    document.querySelectorAll('.chip.on, .countbtn.on').forEach(function (b) { b.classList.remove('on'); });
+    if (wasOpen && trigger) trigger.focus();
   }
   document.getElementById('tbody').addEventListener('click', function (e) {
     var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip'), cb = e.target.closest('.countbtn');
-    if (cb) openDrawer(+cb.dataset.i, null, 'list');
-    else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k);
-    else if (n) openDrawer(+n.dataset.i, null);
+    if (cb) openDrawer(+cb.dataset.i, null, 'list', cb);
+    else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k, null, ch);
+    else if (n) openDrawer(+n.dataset.i, null, null, n);
   });
   drawer.addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest('#dclose')) closeDrawer();
-    else if (t.closest('#prev') && cur > 0) openDrawer(cur - 1, null, mode);
-    else if (t.closest('#next') && cur < rows.length - 1) openDrawer(cur + 1, null, mode);
+    else if (t.closest('#prev') && cur > 0) { openDrawer(cur - 1, null, mode, rowTrigger(cur - 1), 'prev'); }
+    else if (t.closest('#next') && cur < rows.length - 1) { openDrawer(cur + 1, null, mode, rowTrigger(cur + 1), 'next'); }
     else if (t.closest('#fullp')) { e.preventDefault(); document.getElementById('soon').hidden = false; }
-    else if (t.dataset.ask) { asked[t.dataset.ask] = true; var top = document.getElementById('dbody').scrollTop; renderDrawer(); document.getElementById('dbody').scrollTop = top; }
+    else if (t.dataset.ask) { asked[t.dataset.ask] = true; var m = document.createElement('div'); m.className = 'asked'; m.setAttribute('role', 'status'); m.textContent = 'Request noted for the test'; t.replaceWith(m); }
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { hideTip(); hidePop(); closeDrawer(); } });
 })();
