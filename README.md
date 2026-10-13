@@ -29,3 +29,5 @@ Hosted from `docs/` via GitHub Pages.
 ## Exploration page
 
 `explore.html` stress-tests the three displays at 5, 8 and 10 requirements and sketches configurable requirements (on/off, rename, Must/Nice). Not linked from the test pages.
+
+Each variant shows different invented people (names, towns, employers), so participants can't compare the same candidate across tasks. Ranks, criteria states, fits and the three traps are identical.

@@ -286,6 +286,44 @@
 
   var rows = V === 'a' ? C.slice() : ORDER_BC.map(function (n) { return C.filter(function (c) { return c.n === n; })[0]; });
 
+  // Each variant shows different people so a participant can't compare the same candidate across tasks.
+  // Variant A keeps the original names. Per original name: [new name, [old, new] replacements for town, employer (and country)].
+  var REN = {
+    b: {
+      'Priya Nair': ['Fatima Rahman', ['Manchester', 'Sheffield'], ['Northern Freight Ltd', 'Don Valley Steel Ltd']],
+      'Tomas Weber': ['Julien Moreau', ['Berlin', 'Paris'], ['Brandt Logistik GmbH', 'Maison Verrier SA'], ['Germany', 'France']],
+      'Hannah Clarke': ['Grace Adeyemi', ['Leeds', 'Nottingham'], ['Calder Foods', 'Trent Dairy Co-op']],
+      'Samuel Okoye': ['Callum Reid', ['London', 'Reading'], ['Harlow Retail', 'Thames Valley Telecom']],
+      'Aiko Tanaka': ['Ines Duarte', ['Bristol', 'Southampton'], ['Severn Packaging', 'Solent Marine Group']],
+      'Daniel Evans': ['Martin Hughes', ['Cardiff', 'Swansea'], ['Evans & Co', 'Hughes Builders Merchants']],
+      'Meera Shah': ['Anjali Menon', ['Birmingham', 'Coventry'], ['Midlands Print', 'Warwick Engineering Group']],
+      'Lucas Martin': ['Piotr Nowak', ['Madrid', 'Warsaw'], ['Iberia Textiles SL', 'Wisla Packaging sp. z o.o.'], ['Spain', 'Poland']],
+      'Chloe Bennett': ['Ruth Gallagher', ['Edinburgh', 'Aberdeen'], ['Forth Estates', 'Granite Offshore Services']],
+      'Rahul Verma': ['Oluwaseun Bello', ['Glasgow', 'Newcastle'], ['Clyde Services', 'Tyne Care Group']]
+    },
+    c: {
+      'Priya Nair': ['Zainab Qureshi', ['Manchester', 'Liverpool'], ['Northern Freight Ltd', 'Mersey Port Logistics']],
+      'Tomas Weber': ['Mateusz Kowalski', ['Berlin', 'Warsaw'], ['Brandt Logistik GmbH', 'Baltic Freight sp. z o.o.'], ['Germany', 'Poland']],
+      'Hannah Clarke': ['Eleanor Whitfield', ['Leeds', 'Bath'], ['Calder Foods', 'Avon Furniture Group']],
+      'Samuel Okoye': ['Dev Patel', ['London', 'Leicester'], ['Harlow Retail', 'Soar Valley Foods']],
+      'Aiko Tanaka': ['Chen Wei', ['Bristol', 'Norwich'], ['Severn Packaging', 'Broadland Insurance Services']],
+      'Daniel Evans': ['Gareth Pryce', ['Cardiff', 'Wrexham'], ['Evans & Co', 'Pryce & Daughters']],
+      'Meera Shah': ['Isabel Fernandes', ['Birmingham', 'Cambridge'], ['Midlands Print', 'Fenland Biotech']],
+      'Lucas Martin': ['Henrik Larsen', ['Madrid', 'Amsterdam'], ['Iberia Textiles SL', 'Noordzee Trading BV'], ['Spain', 'Netherlands']],
+      'Chloe Bennett': ['Amara Okafor', ['Edinburgh', 'Dundee'], ['Forth Estates', 'Tay Estates']],
+      'Rahul Verma': ['Vikram Singh', ['Glasgow', 'Wolverhampton'], ['Clyde Services', 'Black Country Housing']]
+    }
+  };
+  if (REN[V]) C.forEach(function (c) {
+    var r = REN[V][c.n], pairs = r.slice(1);
+    c.n = r[0];
+    c.loc = c.loc.replace(pairs[0][0], pairs[0][1]);
+    Object.keys(c.ev).forEach(function (k) {
+      if (c.ev[k].length < 3) return;
+      pairs.forEach(function (p) { c.ev[k][2] = c.ev[k][2].split(p[0]).join(p[1]); });
+    });
+  });
+
   // ---- derived values -------------------------------------------------
   function counts(c) {
     var r = { met: 0, not: 0, unk: 0 };
