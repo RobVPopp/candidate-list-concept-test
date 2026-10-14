@@ -46,6 +46,9 @@
   .count-note b { color: var(--ink); }
   .btn { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 600; }
   .btn:hover { background: #000; }
+  .btn.flash { animation: flash 1s ease-in-out infinite; }
+  @keyframes flash { 0%, 100% { background: var(--ink); box-shadow: 0 0 0 0 rgba(47,95,208,0); } 50% { background: var(--accent); box-shadow: 0 0 0 6px rgba(47,95,208,.3); } }
+  @media (prefers-reduced-motion: reduce) { .btn.flash { animation: none; background: var(--accent); } }
   .notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--ink); background: var(--surface); border-radius: 6px; display: none; }
   .notice.show { display: block; }
   .notice.warn { border-color: #924d00; background: #fef9c3; }
@@ -419,9 +422,11 @@
     } else if (at >= 0) picked.splice(at, 1);
     e.target.closest('tr').classList.toggle('picked', e.target.checked);
     document.getElementById('n-short').textContent = picked.length;
+    document.getElementById('done').classList.toggle('flash', picked.length === 3);
     notice.className = 'notice';
   });
   document.getElementById('done').addEventListener('click', function () {
+    this.classList.remove('flash');
     var sec = Math.round((Date.now() - T0) / 1000), took = Math.floor(sec / 60) + ' min ' + (sec % 60) + ' s';
     showNotice((picked.length ? 'Your shortlist: ' + picked.join(', ') + '.' : 'You have not shortlisted anyone.') + ' Time taken: ' + took + '. You can carry on looking at the list.');
   });
