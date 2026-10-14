@@ -5,16 +5,16 @@ One static page, three variants chosen by the address. Fictional data, no networ
 | Task link | Variant | What the participant sees |
 | --- | --- | --- |
 | `?v=a` | A: % fit | Percentage plus band ("Excellent fit"). Hovering (or tabbing to) the fit shows an overlay in the style of Trevor's (intro text with confidence, labelled 0–4 levels with bars, weighted-average arithmetic). Clicking a name opens a plain profile panel. Order: by fit. |
-| `?v=b` | B: Band and count | Band plus "4 of 5 requirements met". The label comes only from the requirement states ("All requirements met", "Check N unknown", "N not met"). Clicking the count button opens the drawer with Not met / Unknown / Met, a reason for each not met, and no evidence. Same plain profile panel as A. Order: by requirements. |
-| `?v=c` | C: Criteria and evidence | Five criteria chips per row (filled ✓ met, outlined ✕ not met, dashed – unknown). A chip or name opens a drawer with the source for each criterion, keyword highlighted between grey bars of CV text, "Ask candidate to confirm" on unknowns, a stepper and "View full profile". Order: by requirements. |
+| `?v=b` | B: Band and count | Band plus "N of 8 requirements met". The label comes only from the requirement states ("All requirements met", "Check N unknown", "N not met"). Clicking the count button opens the drawer with Not met / Unknown / Met, a reason for each not met, and no evidence. Same plain profile panel as A. Order: by requirements. |
+| `?v=c` | C: Criteria and evidence | Eight requirements; the first five show as chips per row with a +3 to reveal the rest (filled ✓ met, outlined ✕ not met, dashed – unknown). A chip or name opens a drawer with the source for each criterion, keyword highlighted between grey bars of CV text, "Ask candidate to confirm" on unknowns, a stepper and "View full profile". Order: by requirements. |
 
 An address with no or an unrecognised `v` shows variant A.
 
 ## Shared across all three
 
 - Header "Accountant, Manchester (hybrid) · View job description". The link opens a side panel beside the table (closed by default) with the job description text from the plan.
-- Same ten candidates and table columns (name, score display, location, years, current title, last updated).
-- "Shortlist" checkbox per row, capped at three (a fourth shows a message). "Done" shows who was shortlisted and the time taken since the page loaded, so the choice can be read from the recording. The page stays usable afterwards for the follow-up questions.
+- Same ten candidates and table columns (name, score display, location, years, current title, current employer, last contacted, last updated).
+- "Shortlist" checkbox per row, capped at three (a fourth shows a message). There is no Done button.
 - "View full profile" is a stub ("Not available in this prototype").
 
 ## Notes

@@ -44,11 +44,6 @@
   .subline { color: var(--muted); font-size: 13px; }
   .count-note { color: var(--muted); }
   .count-note b { color: var(--ink); }
-  .btn { background: var(--ink); color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-weight: 600; }
-  .btn:hover { background: #000; }
-  .btn.flash { animation: flash 1s ease-in-out infinite; }
-  @keyframes flash { 0%, 100% { background: var(--ink); box-shadow: 0 0 0 0 rgba(47,95,208,0); } 50% { background: var(--accent); box-shadow: 0 0 0 6px rgba(47,95,208,.3); } }
-  @media (prefers-reduced-motion: reduce) { .btn.flash { animation: none; background: var(--accent); } }
   .notice { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--ink); background: var(--surface); border-radius: 6px; display: none; }
   .notice.show { display: block; }
   .notice.warn { border-color: #924d00; background: #fef9c3; }
@@ -88,6 +83,8 @@
   .chip.met { background: #ecebe6; color: var(--ink); border: 1.5px solid #ecebe6; }
   .chip.not { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
   .chip.unk { background: #fff; color: #5c5c61; border: 1.5px dashed var(--faint); }
+  .chip.more { background: #fff; border: 1.5px solid var(--faint); color: var(--ink); padding: 3px 10px; }
+  .chip[hidden] { display: none; }
   .chip:hover { box-shadow: 0 0 0 2px var(--accent-bg); }
   .chip.on { box-shadow: 0 0 0 2px var(--accent); }
   .mark { width: 14px; height: 14px; display: inline-block; }
@@ -175,7 +172,6 @@
       <div class="actions">
         <span class="subline" id="scored"></span>
         <span class="count-note">Shortlisted: <b id="n-short">0</b> of 3</span>
-        <button class="btn" id="done">Done</button>
       </div>
     </div>
     <div class="notice" id="notice" role="status" aria-live="polite"></div>
@@ -202,6 +198,9 @@
         <li>Hands-on month-end reporting experience</li>
         <li>Based in the UK</li>
         <li>The right to work in the UK</li>
+        <li>Experience supporting the annual audit</li>
+        <li>Management accounts preparation</li>
+        <li>Experience with an ERP system (e.g. SAP, Sage)</li>
       </ul>
       <h3>About the role</h3>
       <p>You'll work closely with the finance director and a team of four, with a hybrid pattern of two days in the Manchester office.</p>
@@ -221,8 +220,12 @@
     { k: 'qual',  short: 'Qualified',       full: 'A recognised accounting qualification (ACA, ACCA or CIMA)' },
     { k: 'month', short: 'Month-end',       full: 'Hands-on month-end reporting experience' },
     { k: 'uk',    short: 'UK-based',        full: 'Based in the UK' },
-    { k: 'rtw',   short: 'Right to work',   full: 'The right to work in the UK' }
+    { k: 'rtw',   short: 'Right to work',   full: 'The right to work in the UK' },
+    { k: 'audit', short: 'Audit support',   full: 'Experience supporting the annual audit' },
+    { k: 'mgmt',  short: 'Mgmt accounts',   full: 'Management accounts preparation' },
+    { k: 'erp',   short: 'ERP',             full: 'Experience with an ERP system (e.g. SAP, Sage)' }
   ];
+  var CHIPS_SHOWN = 5;   // variant C shows this many chips, then a + to reveal the rest
   var STATE_LABEL = { met: 'Met', not: 'Not met', unk: 'Unknown' };
 
   // ev: [status, source, text with [[keyword]] highlight]. Unknown has no text.
@@ -289,6 +292,23 @@
       uk: ['met', 'Profile · Location', '[[Glasgow]], United Kingdom'],
       rtw: ['met', 'CV · Personal details', '[[British citizen]]'] } }
   ];
+  // Current employer, last contacted (fuzzy), and the three additional requirements.
+  var X = {
+    'Priya Nair':    ['Northern Freight Ltd', '3 months ago', ['met', 'Supported the annual [[audit]] and prepared audit schedules'], ['met', 'Prepared monthly [[management accounts]] for the finance director'], ['met', 'Daily use of [[SAP]] for ledgers and reporting']],
+    'Tomas Weber':   ['Brandt Logistik GmbH', 'Never', ['met', 'Handled [[audit]] queries from the external auditors'], ['unk'], ['unk']],
+    'Hannah Clarke': ['Calder Foods', '2 weeks ago', ['met', 'Coordinated the year-end [[audit]] with the external auditors'], ['met', 'Produced [[management accounts]] and variance commentary'], ['met', 'Administered [[Sage 200]] and migrated the ledgers']],
+    'Samuel Okoye':  ['Harlow Retail', 'Never', ['met', 'Prepared [[audit]] working papers and supported fieldwork'], ['met', 'Owned the monthly [[management accounts]] pack'], ['unk']],
+    'Aiko Tanaka':   ['Severn Packaging', '5 months ago', ['met', 'Supported the annual [[audit]] for two entities'], ['unk'], ['met', 'Used [[SAP]] for journals and reconciliations']],
+    'Daniel Evans':  ['Not listed', 'Over a year ago', ['unk'], ['met', 'Prepared simple [[management accounts]] for small clients'], ['unk']],
+    'Meera Shah':    ['Midlands Print', 'Never', ['unk'], ['unk'], ['met', 'Worked in [[NetSuite]] for project cost reporting']],
+    'Lucas Martin':  ['Iberia Textiles SL', '1 month ago', ['unk'], ['met', 'Prepared [[management accounts]] for the local directors'], ['unk']],
+    'Chloe Bennett': ['Forth Estates', 'Never', ['unk'], ['unk'], ['unk']],
+    'Rahul Verma':   ['Clyde Services', '8 months ago', ['not', 'Duties listed are [[payroll]] processing. No audit support listed'], ['unk'], ['unk']]
+  };
+  C.forEach(function (c) {
+    var x = X[c.n]; c.emp = x[0]; c.lc = x[1];
+    ['audit', 'mgmt', 'erp'].forEach(function (k, i) { var e = x[2 + i]; c.ev[k] = e.length === 1 ? e : [e[0], 'CV · Experience', e[1]]; });
+  });
   var ORDER_BC = ['Hannah Clarke', 'Priya Nair', 'Samuel Okoye', 'Aiko Tanaka', 'Meera Shah', 'Daniel Evans', 'Tomas Weber', 'Lucas Martin', 'Chloe Bennett', 'Rahul Verma'];
 
   var q = new URLSearchParams(location.search).get('v');
@@ -329,6 +349,7 @@
     var r = REN[V][c.n], pairs = r.slice(1);
     c.n = r[0];
     c.loc = c.loc.replace(pairs[0][0], pairs[0][1]);
+    c.emp = c.emp.split(pairs[1][0]).join(pairs[1][1]);
     Object.keys(c.ev).forEach(function (k) {
       if (c.ev[k].length < 3) return;
       pairs.forEach(function (p) { c.ev[k][2] = c.ev[k][2].split(p[0]).join(p[1]); });
@@ -349,7 +370,7 @@
   }
   // Reason shown in B's drawer for a not-met requirement (from the record).
   function whyNot(c, k) {
-    return { role: 'Current role: ' + c.title, uk: 'Based in ' + c.loc, month: 'No month-end reporting in the record', qual: 'No recognised qualification in the record', rtw: 'No right to work in the record' }[k];
+    return { role: 'Current role: ' + c.title, uk: 'Based in ' + c.loc, month: 'No month-end reporting in the record', qual: 'No recognised qualification in the record', rtw: 'No right to work in the record', audit: 'No audit support in the record', mgmt: 'No management accounts in the record', erp: 'No ERP experience in the record' }[k];
   }
   function bandA(f) { return f >= 90 ? 'Excellent fit' : f >= 80 ? 'Strong fit' : f >= 70 ? 'Good fit' : 'Partial fit'; }
 
@@ -379,7 +400,7 @@
 
   // ---- table ----------------------------------------------------------
   var scoreHead = V === 'a' ? 'Fit' : V === 'b' ? 'Requirements' : 'Requirements';
-  document.getElementById('thead').innerHTML = '<tr><th class="c-check"><span class="sr" style="position:absolute;left:-9999px">Shortlist</span></th><th>Name</th><th>' + scoreHead + '</th><th>Location</th><th>Years of experience</th><th>Current job title</th><th>Last updated</th></tr>';
+  document.getElementById('thead').innerHTML = '<tr><th class="c-check"><span class="sr" style="position:absolute;left:-9999px">Shortlist</span></th><th>Name</th><th>' + scoreHead + '</th><th>Location</th><th>Years of experience</th><th>Current job title</th><th>Current employer</th><th>Last contacted</th><th>Last updated</th></tr>';
   if (V === 'c') {
     document.getElementById('legend').hidden = false;
     document.getElementById('lg-met').innerHTML = '<span class="chip met">' + ic('met', 12) + 'Met</span>';
@@ -389,22 +410,23 @@
 
   function scoreCell(c, i) {
     if (V === 'a') return '<button class="fitbtn" data-i="' + i + '" aria-label="' + c.fit + ' percent, ' + bandA(c.fit) + '. Show how this is calculated"><span class="fit-num">' + c.fit + '%</span><span class="band">' + bandA(c.fit) + '</span></button>';
-    if (V === 'b') return '<div class="bcell"><span class="blabel">' + bandB(c) + '</span><button type="button" class="countbtn" data-i="' + i + '" aria-label="Show requirement details for ' + esc(c.n) + ' (' + counts(c).met + ' of 5 met)"><span>' + counts(c).met + ' of 5 requirements met</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
-    return '<div class="chips">' + CRIT.map(function (x) {
+    if (V === 'b') return '<div class="bcell"><span class="blabel">' + bandB(c) + '</span><button type="button" class="countbtn" data-i="' + i + '" aria-label="Show requirement details for ' + esc(c.n) + ' (' + counts(c).met + ' of ' + CRIT.length + ' met)"><span>' + counts(c).met + ' of ' + CRIT.length + ' requirements met</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
+    var rest = CRIT.length - CHIPS_SHOWN;
+    return '<div class="chips">' + CRIT.map(function (x, n) {
       var st = c.ev[x.k][0];
-      return '<button class="chip ' + st + '" data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
-    }).join('') + '</div>';
+      return '<button class="chip ' + st + (n >= CHIPS_SHOWN ? ' extra' : '') + '"' + (n >= CHIPS_SHOWN ? ' hidden' : '') + ' data-i="' + i + '" data-k="' + x.k + '" aria-label="' + esc(x.full) + ': ' + STATE_LABEL[st] + '">' + ic(st, 14) + esc(x.short) + '</button>';
+    }).join('') + '<button type="button" class="chip more" data-more="' + i + '" aria-expanded="false" aria-label="Show ' + rest + ' more requirements for ' + esc(c.n) + '">+' + rest + '</button></div>';
   }
   document.getElementById('tbody').innerHTML = rows.map(function (c, i) {
     return '<tr class="row" data-i="' + i + '"><td class="c-check"><input type="checkbox" class="checkbox" data-i="' + i + '" aria-label="Shortlist ' + esc(c.n) + '"></td>' +
       '<td><button class="namebtn" data-i="' + i + '">' + esc(c.n) + '</button></td>' +
       '<td>' + scoreCell(c, i) + '</td>' +
-      '<td>' + esc(c.loc) + '</td><td>' + c.yrs + '</td><td>' + esc(c.title) + '</td><td class="muted">' + esc(c.upd) + '</td></tr>';
+      '<td>' + esc(c.loc) + '</td><td>' + c.yrs + '</td><td>' + esc(c.title) + '</td><td>' + esc(c.emp) + '</td><td class="muted">' + esc(c.lc) + '</td><td class="muted">' + esc(c.upd) + '</td></tr>';
   }).join('');
 
   // ---- shortlist ------------------------------------------------------
   document.getElementById('scored').textContent = 'Showing the top ' + SHOWN + ' of the ' + SCORED + ' closest matches';
-  var picked = [], T0 = Date.now();
+  var picked = [];
   var notice = document.getElementById('notice');
   function showNotice(msg, warn) {
     notice.textContent = msg; notice.className = 'notice show' + (warn ? ' warn' : '');
@@ -422,13 +444,7 @@
     } else if (at >= 0) picked.splice(at, 1);
     e.target.closest('tr').classList.toggle('picked', e.target.checked);
     document.getElementById('n-short').textContent = picked.length;
-    document.getElementById('done').classList.toggle('flash', picked.length === 3);
     notice.className = 'notice';
-  });
-  document.getElementById('done').addEventListener('click', function () {
-    this.classList.remove('flash');
-    var sec = Math.round((Date.now() - T0) / 1000), took = Math.floor(sec / 60) + ' min ' + (sec % 60) + ' s';
-    showNotice((picked.length ? 'Your shortlist: ' + picked.join(', ') + '.' : 'You have not shortlisted anyone.') + ' Time taken: ' + took + '. You can carry on looking at the list.');
   });
 
   // ---- job description panel -----------------------------------------
@@ -460,7 +476,7 @@
   function popHtml(c) {
     var groups = { met: [], not: [], unk: [] };
     CRIT.forEach(function (x) { groups[c.ev[x.k][0]].push(x.full); });
-    var h = '<div class="tip-h" style="margin:0">' + esc(c.n) + ': ' + counts(c).met + ' of 5 requirements met</div>';
+    var h = '<div class="tip-h" style="margin:0">' + esc(c.n) + ': ' + counts(c).met + ' of ' + CRIT.length + ' requirements met</div>';
     [['met', 'Met'], ['not', 'Not met'], ['unk', 'Unknown']].forEach(function (g) {
       if (!groups[g[0]].length) return;
       h += '<div class="pop-sec"><h4>' + g[1] + '</h4>' + groups[g[0]].map(function (t) { return '<div class="pop-row">' + ic(g[0], 14) + '<span>' + esc(t) + '</span></div>'; }).join('') + '</div>';
@@ -502,7 +518,7 @@
     capShown = false;
     if (V === 'c') body = CRIT.map(function (x, i) { return { x: x, i: i }; }).sort(function (p, q) { return (RANK[c.ev[p.x.k][0]] - RANK[c.ev[q.x.k][0]]) || (p.i - q.i); }).map(function (o) { return critBlock(c, o.x); }).join('');
     else if (mode === 'list') {
-      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + esc(bandB(c)) + ' · ' + counts(c).met + ' of 5 requirements met</div></div>';
+      body = '<div class="crit" style="border:0;padding-bottom:4px"><div class="crit-h" style="font-size:16px">' + esc(bandB(c)) + ' · ' + counts(c).met + ' of ' + CRIT.length + ' requirements met</div></div>';
       [['not', 'Not met'], ['unk', 'Unknown'], ['met', 'Met']].forEach(function (t) {
         var items = CRIT.filter(function (x) { return c.ev[x.k][0] === t[0]; });
         if (!items.length) return;
@@ -512,7 +528,7 @@
         }).join('') + '</div>';
       });
     }
-    else body = '<dl style="margin:0"><div class="kv"><dt>Current job title</dt><dd>' + esc(c.title) + '</dd></div><div class="kv"><dt>Location</dt><dd>' + esc(c.loc) + '</dd></div><div class="kv"><dt>Years of experience</dt><dd>' + c.yrs + '</dd></div><div class="kv"><dt>Last updated</dt><dd>' + esc(c.upd) + '</dd></div></dl>';
+    else body = '<dl style="margin:0"><div class="kv"><dt>Current job title</dt><dd>' + esc(c.title) + '</dd></div><div class="kv"><dt>Current employer</dt><dd>' + esc(c.emp) + '</dd></div><div class="kv"><dt>Last contacted</dt><dd>' + esc(c.lc) + '</dd></div><div class="kv"><dt>Location</dt><dd>' + esc(c.loc) + '</dd></div><div class="kv"><dt>Years of experience</dt><dd>' + c.yrs + '</dd></div><div class="kv"><dt>Last updated</dt><dd>' + esc(c.upd) + '</dd></div></dl>';
     drawer.innerHTML = head + '<div class="d-body" id="dbody">' + body + '</div><div class="d-foot"><a href="#" class="full" id="fullp">View full profile</a><span class="soon" id="soon" hidden>Not available in this prototype</span></div>';
     var f = drawer.querySelector('.crit.focus');
     if (f) f.scrollIntoView({ block: 'nearest' });
@@ -533,8 +549,13 @@
     if (wasOpen && trigger) trigger.focus();
   }
   document.getElementById('tbody').addEventListener('click', function (e) {
-    var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip'), cb = e.target.closest('.countbtn');
-    if (cb) openDrawer(+cb.dataset.i, null, 'list', cb);
+    var n = e.target.closest('.namebtn'), ch = e.target.closest('.chip[data-k]'), cb = e.target.closest('.countbtn'), mo = e.target.closest('.more');
+    if (mo) {
+      var open = mo.getAttribute('aria-expanded') !== 'true', rest = CRIT.length - CHIPS_SHOWN;
+      mo.closest('.chips').querySelectorAll('.extra').forEach(function (x) { x.hidden = !open; });
+      mo.setAttribute('aria-expanded', open); mo.textContent = open ? '−' : '+' + rest;
+      mo.setAttribute('aria-label', (open ? 'Hide ' : 'Show ') + rest + (open ? ' extra requirements for ' : ' more requirements for ') + rows[+mo.dataset.more].n);
+    } else if (cb) openDrawer(+cb.dataset.i, null, 'list', cb);
     else if (ch) openDrawer(+ch.dataset.i, ch.dataset.k, null, ch);
     else if (n) openDrawer(+n.dataset.i, null, null, n);
   });
